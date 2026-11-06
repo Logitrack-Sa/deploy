@@ -1,0 +1,29 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: 'api-gateway'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['api-gateway:8080']
+
+  - job_name: 'security-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['security-service:8083']
+
+  - job_name: 'shipment-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['shipment-service:8081']
+
+  - job_name: 'courier-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['courier-service:8082']
+
+  - job_name: 'chatbot-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['chatbot-service:8084']

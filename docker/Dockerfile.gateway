@@ -1,0 +1,20 @@
+# --- Dockerfile para API Gateway desde el contexto de despliegue global ---
+FROM eclipse-temurin:25-jre
+
+WORKDIR /app
+
+# Crear usuario y grupo de sistema sin privilegios
+RUN groupadd -r spring && useradd -r -g spring -s /sbin/nologin spring && \
+    mkdir -p /config && chown -R spring:spring /app /config
+
+# Copiar el artefacto precompilado
+COPY api-gateway/target/api-gateway-*.jar /app/app.jar
+
+ENV SERVER_PORT=8080 \
+    JAVA_OPTS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -Djava.security.egd=file:/dev/./urandom"
+
+USER spring:spring
+
+EXPOSE 8080
+
+ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -jar app.jar"]

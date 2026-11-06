@@ -1,0 +1,17 @@
+FROM eclipse-temurin:25-jre
+
+WORKDIR /app
+
+RUN groupadd -r spring && useradd -r -g spring -s /sbin/nologin spring && \
+    mkdir -p /config && chown -R spring:spring /app /config
+
+COPY eureka-server/target/eureka-server-*.jar /app/app.jar
+
+ENV SERVER_PORT=8065 \
+    JAVA_OPTS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -Djava.security.egd=file:/dev/./urandom"
+
+USER spring:spring
+
+EXPOSE 8065
+
+ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -jar app.jar"]

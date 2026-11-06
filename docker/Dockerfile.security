@@ -1,0 +1,20 @@
+FROM eclipse-temurin:25-jre
+
+WORKDIR /app
+
+# Crear usuario y grupo de sistema sin privilegios
+RUN groupadd -r spring && useradd -r -g spring -s /sbin/nologin spring && \
+    mkdir -p /secrets /config && chown -R spring:spring /app /secrets /config
+
+# Copiar el artefacto precompilado
+COPY security-service/target/security-service-*.jar /app/app.jar
+
+ENV SERVER_PORT=8083 \
+    SPRING_PROFILES_ACTIVE=dev \
+    JAVA_OPTS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -Djava.security.egd=file:/dev/./urandom"
+
+USER spring:spring
+
+EXPOSE 8083
+
+ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -jar app.jar"]
