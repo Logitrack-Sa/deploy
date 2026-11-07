@@ -88,8 +88,12 @@ services:
       - "8888:8888"
     environment:
       SERVER_PORT: 8888
+      SERVER_ADDRESS: 0.0.0.0
       SPRING_PROFILES_ACTIVE: native
+      SPRING_CLOUD_CONFIG_SERVER_NATIVE_SEARCH_LOCATIONS: file:/config
       JAVA_TOOL_OPTIONS: "-XX:+UseSerialGC -Xms64m -Xmx192m -XX:MaxMetaspaceSize=128m"
+    volumes:
+      - ../config-repo:/config:ro
     deploy:
       resources:
         limits:
@@ -260,6 +264,43 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
+      eureka-server:
+        condition: service_started
+    networks:
+      - logitrack-net
+
+  # ==========================================
+  # Chatbot stateless: consultas con JWT del usuario
+  # ==========================================
+  chatbot-service:
+    container_name: logitrack-chatbot-service
+    build:
+      context: ..
+      dockerfile: deploy/docker/Dockerfile.chatbot
+    restart: unless-stopped
+    ports:
+      - "${HOST_CHATBOT_PORT:-8084}:8084"
+    environment:
+      SERVER_PORT: 8084
+      CONFIG_SERVER_URL: "http://config-server:8888"
+      EUREKA_SERVER_URL: "http://eureka-server:8065/eureka/"
+      JWT_PUBLIC_KEY_LOCATION: "file:/secrets/public.pem"
+      JWT_ISSUER: ${JWT_ISSUER:-https://security-service}
+      JWT_KEY_ID: ${JWT_KEY_ID:-logitrack-main}
+      AI_API_KEY: ${AI_API_KEY:-}
+      AI_MODEL: ${AI_MODEL:-}
+      AI_BASE_URL: ${AI_BASE_URL:-https://api.openai.com}
+      AI_COMPLETIONS_PATH: ${AI_COMPLETIONS_PATH:-/v1/chat/completions}
+      JAVA_TOOL_OPTIONS: "-XX:+UseSerialGC -Xms32m -Xmx224m -XX:MaxMetaspaceSize=96m -XX:ReservedCodeCacheSize=32m -Xss256k"
+    volumes:
+      - ../certs/public.pem:/secrets/public.pem:ro
+    deploy:
+      resources:
+        limits:
+          memory: 350M
+    depends_on:
+      config-server:
+        condition: service_started
       eureka-server:
         condition: service_started
     networks:

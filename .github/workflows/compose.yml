@@ -1,0 +1,18 @@
+name: Validar orquestación
+on:
+  pull_request:
+  push:
+    branches: [main, develop]
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Validar Compose sin iniciar contenedores
+        run: docker compose config --quiet
+      - name: Validar script de compilación
+        run: bash -n build-all.sh
