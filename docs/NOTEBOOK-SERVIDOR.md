@@ -11,7 +11,7 @@ Acceso LAN: <http://192.168.0.103/logitrack/>. Para el enlace HTTPS actual,
 ejecutar `vps-url` en el servidor y agregar `/logitrack/`.
 
 El servidor ejecuta frontend, Gateway, Eureka, Config Server, Security, Courier,
-Shipment, MySQL, Redis, RabbitMQ, Grafana, Prometheus y Mailpit. Las bases,
+Shipment, MySQL, Redis, RabbitMQ, Grafana, Prometheus, Mailpit y Node Exporter: 14 contenedores. Las bases,
 colas, caché y paneles internos no se publican en Internet. Caddy conserva el
 sitio original y `/demo/`. La PC Windows ya no necesita ejecutar esos servicios.
 Todos arrancan automáticamente con Docker y tienen límites de memoria; MySQL
@@ -27,7 +27,7 @@ docker compose up -d --wait --wait-timeout 420
 ./backup.sh
 ```
 
-Las imágenes son una copia de las versiones locales del 8 de noviembre de 2026;
+Las aplicaciones son una copia de las versiones locales del 8 de noviembre de 2026;
 no se publicaron cambios de Sprint 4 en GitHub ni Docker Hub. `images.json`
 identifica sus IDs, y `sources.json` las revisiones de origen. La configuración
 de Config Server es una copia local fijada en `config/`; no descarga cambios
@@ -50,6 +50,24 @@ ssh -i C:\Users\Alexxe\.ssh\notebook_vps_ed25519 -o UserKnownHostsFile=C:\Users\
 Eureka: `http://localhost:18065/`; Grafana: `http://localhost:13001/`;
 Prometheus: `http://localhost:19090/`; correo de pruebas: `http://localhost:18025/`.
 Cerrar SSH cierra estos accesos, sin detener los servicios.
+
+### Estadísticas de la notebook
+
+Panel: <http://127.0.0.1:13001/d/notebook-servidor>. Se consulta desde esta PC
+mediante el túnel SSH; no es un enlace público. Para volver a conectar después
+de reiniciar Windows, ejecutar `deploy/notebook/VER-ESTADISTICAS.cmd` y mantener
+esa ventana abierta. Usar la cuenta de Grafana existente; no se desactivó el login.
+
+Incluye CPU, RAM, swap, temperaturas del procesador y SSD NVMe, disco disponible,
+actividad del disco, carga y tiempo encendida. Las mediciones se recogen cada
+15 segundos; su historial comienza con la instalación y se conserva hasta 2 días.
+No hay sensor de RPM de ventilador disponible. Los datos corresponden a Ubuntu
+en la notebook, no a la PC Windows ni a un contenedor aislado.
+
+Node Exporter usa la imagen oficial v1.12.1 fijada por digest, sin puertos
+publicados, con usuario sin privilegios y montaje de lectura del host. Solo
+se activaron los colectores necesarios; no se instaló un agente en Windows.
+Referencia: <https://github.com/prometheus/node_exporter>.
 
 ## Respaldo y recuperación
 

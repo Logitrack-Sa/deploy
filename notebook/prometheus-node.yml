@@ -1,0 +1,4 @@
+
+  - job_name: 'notebook'
+    static_configs:
+      - targets: ['node-exporter:9100']

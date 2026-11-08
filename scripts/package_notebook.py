@@ -122,6 +122,15 @@ def prepare(directory, public_url):
         if name == "mailpit":
             environment["MP_DATABASE"] = "/data/mailpit.db"
         project["services"][name] = service
+    node = json.loads((DEPLOY / "notebook/node-exporter.json").read_text())
+    subprocess.run(["docker", "pull", node["image"]], check=True)
+    node_id = run("docker", "image", "inspect", node["image"], "--format", "{{.Id}}")
+    node_tag = f"logitrack-notebook-node-exporter:{date}"
+    subprocess.run(["docker", "tag", node_id, node_tag], check=True)
+    node["image"] = node_tag
+    project["services"]["node-exporter"] = node
+    manifest["node-exporter"] = {"image": node_tag, "id": node_id}
+    images.append(node_tag)
     for path in ("config", "secrets", "backups", "healthcheck", "mysql-init"):
         (root / path).mkdir()
     config_tar = root / "config.tar"
@@ -134,6 +143,8 @@ def prepare(directory, public_url):
     shutil.copytree(DEPLOY / "docker/prometheus", root / "docker/prometheus")
     prometheus = root / "docker/prometheus/prometheus.yml"
     prometheus.write_text(prometheus.read_text().split("  - job_name: 'chatbot-service'")[0].rstrip() + "\n")
+    with prometheus.open("a") as output:
+        output.write("\n" + (DEPLOY / "notebook/prometheus-node.yml").read_text().lstrip("\n"))
     shutil.copytree(DEPLOY / "docker/grafana", root / "docker/grafana")
     # Crear solo los esquemas. Las cuentas del servidor usan contraseñas propias.
     (root / "mysql-init/01-databases.sql").write_text("\n".join(f"CREATE DATABASE IF NOT EXISTS `{db}`;" for db in ("security_db", "courier_db", "logitrack", "shipment_db")) + "\n")
@@ -143,6 +154,8 @@ def prepare(directory, public_url):
     shutil.copyfile(DEPLOY / "scripts/verify_local.py", root / "verify.py")
     shutil.copyfile(DEPLOY / "notebook/backup.sh", root / "backup.sh")
     shutil.copyfile(DEPLOY / "notebook/update_public_url.py", root / "update_public_url.py")
+    shutil.copyfile(DEPLOY / "notebook/node-exporter.json", root / "node-exporter.json")
+    shutil.copyfile(DEPLOY / "notebook/prometheus-node.yml", root / "prometheus-node.yml")
     shutil.copyfile(DEPLOY / "docs/NOTEBOOK-SERVIDOR.md", root / "README.md")
     for path in (root / "mysql-init/02-users.sh", root / "healthcheck/http-health.sh", root / "backup.sh"):
         path.write_bytes(path.read_bytes().replace(b"\r\n", b"\n"))

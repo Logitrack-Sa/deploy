@@ -1,0 +1,687 @@
+{
+  "id": null,
+  "uid": "notebook-servidor",
+  "title": "Notebook · Estado del servidor",
+  "description": "CPU, RAM, temperaturas, almacenamiento y carga de la notebook Ubuntu donde se ejecuta Logitrack.",
+  "schemaVersion": 40,
+  "version": 1,
+  "editable": true,
+  "tags": [
+    "notebook",
+    "hardware",
+    "logitrack"
+  ],
+  "timezone": "browser",
+  "refresh": "15s",
+  "time": {
+    "from": "now-15m",
+    "to": "now"
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Uso de CPU",
+      "type": "stat",
+      "datasource": "Prometheus-LogiTrack",
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 4,
+        "h": 4
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "decimals": 1,
+          "min": 0,
+          "max": 100
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "100 * (1 - avg(rate(node_cpu_seconds_total{job=\"notebook\",mode=\"idle\"}[$__rate_interval])))",
+          "legendFormat": "Uso de CPU",
+          "range": true,
+          "instant": false
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "area",
+        "textMode": "auto",
+        "justifyMode": "auto"
+      }
+    },
+    {
+      "id": 2,
+      "title": "RAM utilizada",
+      "type": "stat",
+      "datasource": "Prometheus-LogiTrack",
+      "gridPos": {
+        "x": 4,
+        "y": 0,
+        "w": 4,
+        "h": 4
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "decimals": 1,
+          "min": 0
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "node_memory_MemTotal_bytes{job=\"notebook\"} - node_memory_MemAvailable_bytes{job=\"notebook\"}",
+          "legendFormat": "RAM utilizada",
+          "range": true,
+          "instant": false
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "area",
+        "textMode": "auto",
+        "justifyMode": "auto"
+      }
+    },
+    {
+      "id": 3,
+      "title": "Temperatura máxima CPU",
+      "type": "stat",
+      "datasource": "Prometheus-LogiTrack",
+      "gridPos": {
+        "x": 8,
+        "y": 0,
+        "w": 4,
+        "h": 4
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "celsius",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "decimals": 1,
+          "min": 0
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "max(node_hwmon_temp_celsius{job=\"notebook\",chip=~\".*coretemp.*\"})",
+          "legendFormat": "Temperatura máxima CPU",
+          "range": true,
+          "instant": false
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "area",
+        "textMode": "auto",
+        "justifyMode": "auto"
+      }
+    },
+    {
+      "id": 4,
+      "title": "Temperatura del SSD",
+      "type": "stat",
+      "datasource": "Prometheus-LogiTrack",
+      "gridPos": {
+        "x": 12,
+        "y": 0,
+        "w": 4,
+        "h": 4
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "celsius",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "decimals": 1,
+          "min": 0
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "max(node_hwmon_temp_celsius{job=\"notebook\",chip=~\"nvme.*\"})",
+          "legendFormat": "Temperatura del SSD",
+          "range": true,
+          "instant": false
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "area",
+        "textMode": "auto",
+        "justifyMode": "auto"
+      }
+    },
+    {
+      "id": 5,
+      "title": "Disco del sistema disponible",
+      "type": "stat",
+      "datasource": "Prometheus-LogiTrack",
+      "gridPos": {
+        "x": 16,
+        "y": 0,
+        "w": 4,
+        "h": 4
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "decimals": 1,
+          "min": 0
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "node_filesystem_avail_bytes{job=\"notebook\",mountpoint=\"/\"}",
+          "legendFormat": "Disco del sistema disponible",
+          "range": true,
+          "instant": false
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "area",
+        "textMode": "auto",
+        "justifyMode": "auto"
+      }
+    },
+    {
+      "id": 6,
+      "title": "Tiempo encendida",
+      "type": "stat",
+      "datasource": "Prometheus-LogiTrack",
+      "gridPos": {
+        "x": 20,
+        "y": 0,
+        "w": 4,
+        "h": 4
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "dtdhms",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "decimals": 1,
+          "min": 0
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "time() - node_boot_time_seconds{job=\"notebook\"}",
+          "legendFormat": "Tiempo encendida",
+          "range": true,
+          "instant": false
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "area",
+        "textMode": "auto",
+        "justifyMode": "auto"
+      }
+    },
+    {
+      "id": 7,
+      "title": "Uso de CPU en el tiempo",
+      "type": "timeseries",
+      "datasource": "Prometheus-LogiTrack",
+      "gridPos": {
+        "x": 0,
+        "y": 4,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "decimals": 1,
+          "min": 0,
+          "max": 100,
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "spanNulls": false,
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "100 * (1 - avg(rate(node_cpu_seconds_total{job=\"notebook\",mode=\"idle\"}[$__rate_interval])))",
+          "legendFormat": "CPU utilizada",
+          "range": true,
+          "instant": false
+        }
+      ],
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 8,
+      "title": "Temperaturas de procesador y SSD",
+      "type": "timeseries",
+      "datasource": "Prometheus-LogiTrack",
+      "gridPos": {
+        "x": 12,
+        "y": 4,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "celsius",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "decimals": 1,
+          "min": 0,
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "spanNulls": false,
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "node_hwmon_temp_celsius{job=\"notebook\",chip=~\".*(coretemp|nvme).*\"} * on(instance,chip,sensor) group_left(label) node_hwmon_sensor_label{job=\"notebook\"}",
+          "legendFormat": "{{label}}",
+          "range": true,
+          "instant": false
+        }
+      ],
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 9,
+      "title": "Memoria RAM",
+      "type": "timeseries",
+      "datasource": "Prometheus-LogiTrack",
+      "gridPos": {
+        "x": 0,
+        "y": 12,
+        "w": 8,
+        "h": 7
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "decimals": 1,
+          "min": 0,
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "spanNulls": false,
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "node_memory_MemTotal_bytes{job=\"notebook\"} - node_memory_MemAvailable_bytes{job=\"notebook\"}",
+          "legendFormat": "Utilizada",
+          "range": true,
+          "instant": false
+        },
+        {
+          "refId": "B",
+          "expr": "node_memory_MemAvailable_bytes{job=\"notebook\"}",
+          "legendFormat": "Disponible",
+          "range": true,
+          "instant": false
+        }
+      ],
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 10,
+      "title": "Uso del disco del sistema",
+      "type": "timeseries",
+      "datasource": "Prometheus-LogiTrack",
+      "gridPos": {
+        "x": 8,
+        "y": 12,
+        "w": 8,
+        "h": 7
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "decimals": 1,
+          "min": 0,
+          "max": 100,
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "spanNulls": false,
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "100 * (1 - node_filesystem_avail_bytes{job=\"notebook\",mountpoint=\"/\"} / node_filesystem_size_bytes{job=\"notebook\",mountpoint=\"/\"})",
+          "legendFormat": "Disco ocupado o reservado",
+          "range": true,
+          "instant": false
+        }
+      ],
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 11,
+      "title": "Carga del sistema (procesos, no porcentaje)",
+      "type": "timeseries",
+      "datasource": "Prometheus-LogiTrack",
+      "gridPos": {
+        "x": 16,
+        "y": 12,
+        "w": 8,
+        "h": 7
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "decimals": 1,
+          "min": 0,
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "spanNulls": false,
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "node_load1{job=\"notebook\"}",
+          "legendFormat": "1 min",
+          "range": true,
+          "instant": false
+        },
+        {
+          "refId": "B",
+          "expr": "node_load5{job=\"notebook\"}",
+          "legendFormat": "5 min",
+          "range": true,
+          "instant": false
+        },
+        {
+          "refId": "C",
+          "expr": "node_load15{job=\"notebook\"}",
+          "legendFormat": "15 min",
+          "range": true,
+          "instant": false
+        }
+      ],
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 12,
+      "title": "Lectura y escritura del disco físico",
+      "type": "timeseries",
+      "datasource": "Prometheus-LogiTrack",
+      "gridPos": {
+        "x": 0,
+        "y": 19,
+        "w": 12,
+        "h": 7
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "Bps",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "decimals": 1,
+          "min": 0,
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "spanNulls": false,
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "rate(node_disk_read_bytes_total{job=\"notebook\",device=~\"nvme[0-9]+n[0-9]+|sd[a-z]+\"}[$__rate_interval])",
+          "legendFormat": "Lectura {{device}}",
+          "range": true,
+          "instant": false
+        },
+        {
+          "refId": "B",
+          "expr": "rate(node_disk_written_bytes_total{job=\"notebook\",device=~\"nvme[0-9]+n[0-9]+|sd[a-z]+\"}[$__rate_interval])",
+          "legendFormat": "Escritura {{device}}",
+          "range": true,
+          "instant": false
+        }
+      ],
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 13,
+      "title": "Uso de memoria swap",
+      "type": "timeseries",
+      "datasource": "Prometheus-LogiTrack",
+      "gridPos": {
+        "x": 12,
+        "y": 19,
+        "w": 12,
+        "h": 7
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "decimals": 1,
+          "min": 0,
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "spanNulls": false,
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "node_memory_SwapTotal_bytes{job=\"notebook\"} - node_memory_SwapFree_bytes{job=\"notebook\"}",
+          "legendFormat": "Swap utilizada",
+          "range": true,
+          "instant": false
+        }
+      ],
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 99,
+      "title": "Qué estás viendo",
+      "type": "text",
+      "gridPos": {
+        "x": 0,
+        "y": 26,
+        "w": 24,
+        "h": 3
+      },
+      "options": {
+        "mode": "markdown",
+        "content": "**Notebook con Ubuntu Server · datos reales del equipo físico.** Actualización cada 15 segundos e historial de hasta 2 días. La RAM disponible incluye caché recuperable. La CPU muestra el sensor más caliente; Composite corresponde al SSD NVMe. No se detectó un sensor de RPM del ventilador. Las pausas por apagado o suspensión aparecen como huecos en los gráficos."
+      }
+    }
+  ],
+  "templating": {
+    "list": []
+  },
+  "annotations": {
+    "list": []
+  }
+}

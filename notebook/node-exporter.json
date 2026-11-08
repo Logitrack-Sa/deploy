@@ -1,0 +1,28 @@
+{
+  "image": "quay.io/prometheus/node-exporter:v1.12.1@sha256:1b4e4438faca4dd7e001dd445d161a4a2091b0fededa84093b3a8dfeae1f1be0",
+  "restart": "unless-stopped",
+  "user": "65534:65534",
+  "read_only": true,
+  "pid": "host",
+  "cap_drop": ["ALL"],
+  "security_opt": ["no-new-privileges:true"],
+  "networks": {"app": null},
+  "volumes": ["/:/host:ro,rslave"],
+  "command": [
+    "--path.rootfs=/host",
+    "--path.procfs=/host/proc",
+    "--path.sysfs=/host/sys",
+    "--collector.disable-defaults",
+    "--collector.cpu",
+    "--collector.meminfo",
+    "--collector.loadavg",
+    "--collector.filesystem",
+    "--collector.filesystem.mount-points-include=^/$$",
+    "--collector.diskstats",
+    "--collector.hwmon",
+    "--collector.stat",
+    "--collector.uname",
+    "--collector.time"
+  ],
+  "deploy": {"resources": {"limits": {"memory": "64M"}}}
+}
