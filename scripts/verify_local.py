@@ -11,10 +11,14 @@ from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
 
-def verify(directory):
+def verify(directory, base_url=None):
     root = Path(directory).resolve()
-    env = dict(line.split("=", 1) for line in (root / "runtime.env").read_text().splitlines() if line and not line.startswith("#"))
-    base = "http://127.0.0.1:" + env.get("HOST_GATEWAY_PORT", "8080")
+    env_file = root / "runtime.env"
+    if not env_file.exists():
+        env_file = root / ".env"
+    env = dict(line.split("=", 1) for line in env_file.read_text().splitlines() if line and not line.startswith("#"))
+    private_base = "http://127.0.0.1:" + env.get("HOST_GATEWAY_PORT", "8080")
+    base = base_url.rstrip("/") if base_url else private_base
     checks = []
 
     def call(method, path, body=None, token=None, expected=200, host=base):
@@ -42,7 +46,7 @@ def verify(directory):
     deadline = time.monotonic() + 300
     while True:
         try:
-            health = call("GET", "/actuator/health")
+            health = call("GET", "/actuator/health", host=private_base)
             if health.get("status") == "UP":
                 break
         except (AssertionError, URLError, TimeoutError, ValueError, HTTPException, ConnectionError):
@@ -117,4 +121,6 @@ def verify(directory):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--directory", default="target/sprint4")
-    verify(parser.parse_args().directory)
+    parser.add_argument("--base-url", help="URL propia del Gateway, incluyendo el prefijo público si existe")
+    args = parser.parse_args()
+    verify(args.directory, args.base_url)

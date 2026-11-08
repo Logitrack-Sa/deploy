@@ -1,0 +1,13 @@
+@logitrack path /logitrack /logitrack/*
+handle @logitrack {
+    route {
+        @logitrack_api path /logitrack/api/*
+        handle @logitrack_api {
+            uri strip_prefix /logitrack
+            reverse_proxy logitrack-gateway:8080
+        }
+        handle {
+            reverse_proxy logitrack-web:3000
+        }
+    }
+}
