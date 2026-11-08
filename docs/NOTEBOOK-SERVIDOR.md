@@ -1,5 +1,11 @@
 # Logitrack en la notebook
 
+Prometheus consulta Gateway, Security, Courier y Shipment dentro de la red
+privada. En los tres backends se activa `logitrack.metrics.anonymous-enabled`
+solo para `GET /actuator/prometheus`; su valor por defecto es `false`.
+Las rutas de negocio conservan JWT/RBAC. Caddy no publica `/actuator/`.
+El chatbot sin configurar se omite de esta monitorización.
+
 Instalación: `/srv/apps/logitrack`, proyecto Compose `logitrack-notebook`.
 Acceso LAN: <http://192.168.0.103/logitrack/>. Para el enlace HTTPS actual,
 ejecutar `vps-url` en el servidor y agregar `/logitrack/`.

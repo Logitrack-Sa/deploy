@@ -74,6 +74,7 @@ def prepare(directory, public_url):
             if key in environment:
                 environment[key] = "${" + variable + "}"
         if name in ("security-service", "courier-service", "shipment-service"):
+            environment["LOGITRACK_METRICS_ANONYMOUS_ENABLED"] = "true"
             prefix = name.split("-")[0].upper()
             environment["DB_USERNAME"] = name.split("-")[0] + "_app"
             environment["DB_USER"] = environment["DB_USERNAME"]
@@ -131,6 +132,8 @@ def prepare(directory, public_url):
     for name in ("private.pem", "public.pem"):
         shutil.copyfile(DEPLOY / "target/sprint4/certs" / name, root / "secrets" / name)
     shutil.copytree(DEPLOY / "docker/prometheus", root / "docker/prometheus")
+    prometheus = root / "docker/prometheus/prometheus.yml"
+    prometheus.write_text(prometheus.read_text().split("  - job_name: 'chatbot-service'")[0].rstrip() + "\n")
     shutil.copytree(DEPLOY / "docker/grafana", root / "docker/grafana")
     # Crear solo los esquemas. Las cuentas del servidor usan contraseñas propias.
     (root / "mysql-init/01-databases.sql").write_text("\n".join(f"CREATE DATABASE IF NOT EXISTS `{db}`;" for db in ("security_db", "courier_db", "logitrack", "shipment_db")) + "\n")
