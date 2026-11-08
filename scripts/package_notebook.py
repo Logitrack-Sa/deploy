@@ -141,6 +141,8 @@ def prepare(directory, public_url):
     shutil.copyfile(DEPLOY / "notebook/backup.sh", root / "backup.sh")
     shutil.copyfile(DEPLOY / "notebook/update_public_url.py", root / "update_public_url.py")
     shutil.copyfile(DEPLOY / "docs/NOTEBOOK-SERVIDOR.md", root / "README.md")
+    for path in (root / "mysql-init/02-users.sh", root / "healthcheck/http-health.sh", root / "backup.sh"):
+        path.write_bytes(path.read_bytes().replace(b"\r\n", b"\n"))
     (root / "compose.yaml").write_text(json.dumps(project, indent=2), encoding="utf-8")
     (root / ".env").write_text("\n".join(f"{key}={value}" for key, value in env.items()) + "\n", encoding="utf-8")
     (root / "images.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")

@@ -18,6 +18,7 @@ docker compose exec -T mysql sh -c '
 gzip -t "$destination/mysql.sql.gz.partial"
 mv "$destination/mysql.sql.gz.partial" "$destination/mysql.sql.gz"
 tar -czf "$destination/config.tar.gz" -- .env compose.yaml config secrets \
-  mysql-init healthcheck docker images.json sources.json
+  mysql-init healthcheck docker images.json sources.json logitrack.caddy \
+  README.md backup.sh update_public_url.py verify.py
 (cd "$destination" && sha256sum mysql.sql.gz config.tar.gz > SHA256SUMS)
 printf 'Backup terminado: %s\n' "$destination"
