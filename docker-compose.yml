@@ -406,7 +406,7 @@ services:
     image: logitrack-frontend:sprint4-local
     build:
       context: ../logitrack-frontend
-      dockerfile: ../deploy/docker/Dockerfile.frontend
+      dockerfile: Dockerfile
       args:
         NEXT_PUBLIC_API_GATEWAY_URL: "${FRONTEND_API_GATEWAY_URL:-http://localhost:8080}"
         NEXT_PUBLIC_COURIER_STATUS_MODEL: "${FRONTEND_COURIER_STATUS_MODEL:-legacy}"
