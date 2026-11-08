@@ -1,0 +1,4 @@
+**
+!shipment-service/
+!shipment-service/target/
+!shipment-service/target/*.jar

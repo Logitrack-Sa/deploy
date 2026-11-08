@@ -1,0 +1,4 @@
+**
+!config-server/
+!config-server/target/
+!config-server/target/*.jar

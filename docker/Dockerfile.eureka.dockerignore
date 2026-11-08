@@ -1,0 +1,4 @@
+**
+!eureka-server/
+!eureka-server/target/
+!eureka-server/target/*.jar

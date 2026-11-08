@@ -1,0 +1,4 @@
+**
+!chatbot-service/
+!chatbot-service/target/
+!chatbot-service/target/*.jar

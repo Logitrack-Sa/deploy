@@ -1,0 +1,120 @@
+"""Comprueba HTTP real con datos sintéticos. No imprime ni exporta tokens o claves."""
+import argparse
+from http.client import HTTPException
+import json
+from pathlib import Path
+import re
+import secrets
+import time
+from urllib.error import HTTPError, URLError
+from urllib.parse import urlencode
+from urllib.request import Request, urlopen
+
+
+def verify(directory):
+    root = Path(directory).resolve()
+    env = dict(line.split("=", 1) for line in (root / "runtime.env").read_text().splitlines() if line and not line.startswith("#"))
+    base = "http://127.0.0.1:" + env.get("HOST_GATEWAY_PORT", "8080")
+    checks = []
+
+    def call(method, path, body=None, token=None, expected=200, host=base):
+        headers = {"Accept": "application/json"}
+        if token:
+            headers["Authorization"] = "Bearer " + token
+        data = None
+        if body is not None:
+            headers["Content-Type"] = "application/json"
+            data = json.dumps(body).encode()
+        request = Request(host + path, data=data, headers=headers, method=method)
+        try:
+            response = urlopen(request, timeout=20)
+        except HTTPError as error:
+            response = error
+        status = response.status if hasattr(response, "status") else response.code
+        raw = response.read()
+        value = json.loads(raw) if raw else None
+        if status != expected:
+            code = value.get("code", "") if isinstance(value, dict) else ""
+            raise AssertionError(f"{method} {path.split('?')[0]}: {status}, esperado {expected}; {code}")
+        checks.append({"method": method, "path": path.split("?")[0], "status": status})
+        return value
+
+    deadline = time.monotonic() + 300
+    while True:
+        try:
+            health = call("GET", "/actuator/health")
+            if health.get("status") == "UP":
+                break
+        except (AssertionError, URLError, TimeoutError, ValueError, HTTPException, ConnectionError):
+            pass
+        if time.monotonic() > deadline:
+            raise TimeoutError("Gateway no quedó disponible en cinco minutos")
+        time.sleep(2)
+
+    admin = call("POST", "/api/v1/auth/login", {"email": env["SECURITY_ADMIN_EMAIL"], "password": env["SECURITY_ADMIN_PASSWORD"]})["accessToken"]
+    profile = call("GET", "/api/v1/auth/me", token=admin)
+    assert profile["emailVerified"] is True
+    run = secrets.token_hex(6)
+    customer = call("POST", "/api/v1/customers", {"name": "Prueba Sprint 4 " + run, "email": run + "@example.test", "phone": "123456"}, admin, 201)
+    call("POST", "/api/v1/customers", {"name": "", "email": "incorrecto"}, admin, 400)
+    call("GET", "/api/v1/customers?page=0&size=10", token=admin)
+    call("GET", "/api/v1/customers/" + customer["id"], token=admin)
+    courier = call("POST", "/api/v1/couriers", {"name": "Repartidor " + run, "dni": str(secrets.randbelow(90000000) + 10000000), "vehicleType": "MOTO"}, admin, 201)
+    call("GET", "/api/v1/couriers?status=ACTIVO&page=0&size=10", token=admin)
+    call("GET", "/api/v1/couriers/" + courier["id"], token=admin)
+    call("PATCH", "/api/v1/couriers/" + courier["id"] + "/status", {"status": "INACTIVO"}, admin)
+    call("PATCH", "/api/v1/couriers/" + courier["id"] + "/status", {"status": "ACTIVO"}, admin)
+    address = {"street": "Bolivia", "number": "1239", "city": "Jujuy", "postalCode": "4600"}
+    shipment_body = {"customerId": customer["id"], "origin": address, "destination": address, "weightKg": 2.5, "widthCm": 30, "heightCm": 20, "lengthCm": 40}
+    shipment = call("POST", "/api/v1/shipments", shipment_body, admin, 201)
+    route = "/api/v1/shipments/" + shipment["id"]
+    call("PUT", route + "/courier", {"courierId": courier["id"]}, admin)
+    assert call("GET", route, token=admin)["courierId"] == courier["id"]
+    call("GET", "/api/v1/shipments/tracking/" + shipment["trackingCode"], token=admin)
+    call("GET", "/api/v1/shipments?status=PENDIENTE&page=0&size=10", token=admin)
+    call("PATCH", route + "/status", {"status": "EN_RUTA", "observation": "Prueba local"}, admin)
+    call("PATCH", route + "/status", {"status": "ENTREGADO"}, admin)
+    call("PATCH", route + "/status", {"status": "EN_RUTA"}, admin, 422)
+    call("GET", route + "/history", token=admin)
+    cancelled = call("POST", "/api/v1/shipments", shipment_body, admin, 201)
+    cancel_route = "/api/v1/shipments/" + cancelled["id"] + "/cancellation"
+    assert call("POST", cancel_route, token=admin)["status"] == "CANCELADO"
+    call("POST", cancel_route, token=admin, expected=422)
+    call("GET", "/api/v1/shipments", expected=401)
+
+    email, password = f"register-{run}@example.test", secrets.token_hex(20)
+    registered = call("POST", "/api/v1/auth/register", {"email": email, "password": password}, expected=201)
+    call("POST", "/api/v1/auth/login", {"email": email, "password": password}, expected=401)
+    mail_host = "http://127.0.0.1:" + env.get("HOST_MAILPIT_PORT", "8025")
+    token = None
+    for _ in range(30):
+        messages = call("GET", "/api/v1/messages", host=mail_host)
+        for message in messages.get("messages", []):
+            if any(recipient.get("Address") == email for recipient in message.get("To", [])):
+                detail = call("GET", "/api/v1/message/" + message["ID"], host=mail_host)
+                match = re.search(r"/verify-email\?token=([0-9a-f-]{36})", detail.get("Text", ""))
+                if match:
+                    token = match[1]
+                    break
+        if token:
+            break
+        time.sleep(1)
+    assert token, "No se capturó el correo de verificación local"
+    call("POST", "/api/v1/auth/verify-email?" + urlencode({"token": token}))
+    call("POST", "/api/v1/auth/verify-email?" + urlencode({"token": token}), expected=404)
+    call("PUT", f"/api/v1/users/{registered['id']}/customer-link", {"customerId": customer["id"]}, admin)
+    client = call("POST", "/api/v1/auth/login", {"email": email, "password": password})["accessToken"]
+    call("GET", route, token=client)
+    call("POST", "/api/v1/shipments", shipment_body, client, 201)
+    call("GET", "/api/v1/customers", token=client, expected=403)
+    call("GET", "/api/v1/users", token=client, expected=403)
+    call("POST", cancel_route, token=client, expected=403)
+    report = {"passed": True, "requests": checks, "requestCount": len(checks), "mailDelivery": "SMTP local capturado en Mailpit, sin Gmail", "ai": "Pendiente de AI_API_KEY y AI_MODEL"}
+    (root / "verification.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
+    print(f"Verificación HTTP real aprobada: {len(checks)} solicitudes. Informe: {root / 'verification.json'}")
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--directory", default="target/sprint4")
+    verify(parser.parse_args().directory)

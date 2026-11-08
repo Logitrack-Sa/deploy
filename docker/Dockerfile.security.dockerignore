@@ -1,0 +1,4 @@
+**
+!security-service/
+!security-service/target/
+!security-service/target/*.jar

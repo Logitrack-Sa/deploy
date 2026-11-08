@@ -1,0 +1,4 @@
+**
+!courier-service/
+!courier-service/target/
+!courier-service/target/*.jar

@@ -1,0 +1,4 @@
+**
+!api-gateway/
+!api-gateway/target/
+!api-gateway/target/*.jar

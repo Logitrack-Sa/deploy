@@ -1,0 +1,23 @@
+# Solo desarrollo: correo capturado localmente; no se envían mensajes a Internet.
+services:
+  mailpit:
+    image: axllent/mailpit@sha256:aef2aacc11f075ec0fb6874275ee4a421e688e11a96ebb296134d1735c7761ce
+    ports:
+      - "127.0.0.1:${HOST_MAILPIT_PORT:-8025}:8025"
+    deploy:
+      resources:
+        limits:
+          memory: 64M
+    networks:
+      - logitrack-net
+  security-service:
+    environment:
+      SPRING_MAIL_HOST: mailpit
+      SPRING_MAIL_PORT: 1025
+      SPRING_MAIL_USERNAME: local@logitrack.example.test
+      SPRING_MAIL_PASSWORD: local-mail-capture-only
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH: "false"
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE: "false"
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_REQUIRED: "false"
+  chatbot-service:
+    profiles: [ai]

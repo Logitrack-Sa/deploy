@@ -1,5 +1,10 @@
 name: logitrack
 
+x-discovery-env: &discovery-env
+  EUREKA_CLIENT_ENABLED: "true"
+  EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
+  SERVER_ADDRESS: "0.0.0.0"
+
 services:
   # ==========================================
   # Motor Relacional: MySQL 8.4
@@ -20,11 +25,11 @@ services:
         limits:
           memory: 384M
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${DB_ROOT_PASSWORD:-rootpassword}"]
+      test: ["CMD-SHELL", "mysql --protocol=TCP -h127.0.0.1 -uroot -p\"$$MYSQL_ROOT_PASSWORD\" -e 'SELECT 1' >/dev/null 2>&1"]
       interval: 5s
       timeout: 3s
-      retries: 15
-      start_period: 15s
+      retries: 30
+      start_period: 120s
     networks:
       - logitrack-net
 
@@ -85,7 +90,7 @@ services:
       dockerfile: deploy/docker/Dockerfile.config
     restart: unless-stopped
     ports:
-      - "8888:8888"
+      - "127.0.0.1:${HOST_CONFIG_PORT:-8888}:8888"
     environment:
       SERVER_PORT: 8888
       SERVER_ADDRESS: 0.0.0.0
@@ -111,7 +116,7 @@ services:
       dockerfile: deploy/docker/Dockerfile.eureka
     restart: unless-stopped
     ports:
-      - "8065:8065"
+      - "127.0.0.1:${HOST_EUREKA_PORT:-8065}:8065"
     environment:
       SERVER_PORT: 8065
       CONFIG_SERVER_URL: "http://config-server:8888"
@@ -137,6 +142,7 @@ services:
     ports:
       - "${HOST_SECURITY_PORT:-8083}:8083"
     environment:
+      <<: *discovery-env
       SERVER_PORT: 8083
       SPRING_PROFILES_ACTIVE: dev
       DB_URL: "jdbc:mysql://mysql:3306/security_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC"
@@ -151,13 +157,16 @@ services:
       JWT_KEY_ID: ${JWT_KEY_ID:-logitrack-main}
       JWT_ISSUER: ${JWT_ISSUER:-https://security-service}
       JWT_AUDIENCES: ${JWT_AUDIENCES:-security-service,courier-service,shipment-service,chatbot-service}
+      JWT_AUDIENCE: security-service
+      SECURITY_ADMIN_ENABLED: ${SECURITY_ADMIN_ENABLED:-false}
+      SECURITY_ADMIN_EMAIL: ${SECURITY_ADMIN_EMAIL:-admin@logitrack.com}
       SECURITY_ADMIN_USERNAME: ${SECURITY_ADMIN_USERNAME:-admin}
       SECURITY_ADMIN_PASSWORD: ${SECURITY_ADMIN_PASSWORD:-admin123}
       CONFIG_SERVER_URL: "http://config-server:8888"
       EUREKA_SERVER_URL: "http://eureka-server:8065/eureka/"
       JAVA_TOOL_OPTIONS: "-XX:+UseSerialGC -Xms96m -Xmx224m -XX:MaxMetaspaceSize=128m"
     volumes:
-      - ../certs:/secrets:ro
+      - ${JWT_CERTS_DIRECTORY:-../certs}:/secrets:ro
     deploy:
       resources:
         limits:
@@ -184,6 +193,7 @@ services:
     ports:
       - "${HOST_COURIER_PORT:-8082}:8082"
     environment:
+      <<: *discovery-env
       SERVER_PORT: 8082
       SERVER_ADDRESS: 0.0.0.0
       SPRING_PROFILES_ACTIVE: dev
@@ -204,7 +214,7 @@ services:
       EUREKA_SERVER_URL: "http://eureka-server:8065/eureka/"
       JAVA_TOOL_OPTIONS: "-XX:+UseSerialGC -Xms96m -Xmx224m -XX:MaxMetaspaceSize=128m"
     volumes:
-      - ../certs:/secrets:ro
+      - ${JWT_CERTS_DIRECTORY:-../certs}:/secrets:ro
     deploy:
       resources:
         limits:
@@ -233,12 +243,15 @@ services:
     ports:
       - "${HOST_SHIPMENT_PORT:-8081}:8081"
     environment:
+      <<: *discovery-env
       SERVER_PORT: 8081
       SPRING_PROFILES_ACTIVE: dev
       DB_HOST: mysql
       DB_PORT: 3306
       DB_NAME: logitrack
       DB_USER: root
+      DB_URL: "jdbc:mysql://mysql:3306/logitrack?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC"
+      DB_USERNAME: root
       DB_PASSWORD: ${DB_ROOT_PASSWORD:-rootpassword}
       SPRING_DATA_REDIS_HOST: redis
       SPRING_DATA_REDIS_PORT: 6379
@@ -248,11 +261,14 @@ services:
       SPRING_RABBITMQ_PASSWORD: ${RABBITMQ_DEFAULT_PASS:-guest}
       COURIER_SERVICE_URL: "http://courier-service:8082"
       JWT_PUBLIC_KEY_LOCATION: "file:/secrets/public.pem"
+      JWT_KEY_ID: ${JWT_KEY_ID:-logitrack-main}
+      JWT_ISSUER: ${JWT_ISSUER:-https://security-service}
+      JWT_AUDIENCE: shipment-service
       CONFIG_SERVER_URL: "http://config-server:8888"
       EUREKA_SERVER_URL: "http://eureka-server:8065/eureka/"
       JAVA_TOOL_OPTIONS: "-XX:+UseSerialGC -Xms96m -Xmx224m -XX:MaxMetaspaceSize=128m"
     volumes:
-      - ../certs:/secrets:ro
+      - ${JWT_CERTS_DIRECTORY:-../certs}:/secrets:ro
     deploy:
       resources:
         limits:
@@ -281,6 +297,7 @@ services:
     ports:
       - "${HOST_CHATBOT_PORT:-8084}:8084"
     environment:
+      <<: *discovery-env
       SERVER_PORT: 8084
       CONFIG_SERVER_URL: "http://config-server:8888"
       EUREKA_SERVER_URL: "http://eureka-server:8065/eureka/"
@@ -293,7 +310,7 @@ services:
       AI_COMPLETIONS_PATH: ${AI_COMPLETIONS_PATH:-/v1/chat/completions}
       JAVA_TOOL_OPTIONS: "-XX:+UseSerialGC -Xms32m -Xmx224m -XX:MaxMetaspaceSize=96m -XX:ReservedCodeCacheSize=32m -Xss256k"
     volumes:
-      - ../certs/public.pem:/secrets/public.pem:ro
+      - ${JWT_CERTS_DIRECTORY:-../certs}/public.pem:/secrets/public.pem:ro
     deploy:
       resources:
         limits:
@@ -316,16 +333,20 @@ services:
       dockerfile: deploy/docker/Dockerfile.gateway
     restart: unless-stopped
     ports:
-      - "${HOST_GATEWAY_PORT:-8080}:8080"
+      - "127.0.0.1:${HOST_GATEWAY_PORT:-8080}:8080"
     environment:
+      <<: *discovery-env
       SERVER_PORT: 8080
       SPRING_PROFILES_ACTIVE: dev
       EUREKA_SERVER_URL: "http://eureka-server:8065/eureka/"
       CONFIG_SERVER_URL: "http://config-server:8888"
       JWT_PUBLIC_KEY_LOCATION: "file:/secrets/public.pem"
+      JWT_KEY_ID: ${JWT_KEY_ID:-logitrack-main}
+      JWT_ISSUER: ${JWT_ISSUER:-https://security-service}
+      JWT_AUDIENCES: ${JWT_AUDIENCES:-security-service,courier-service,shipment-service,chatbot-service}
       JAVA_TOOL_OPTIONS: "-XX:+UseSerialGC -Xms96m -Xmx224m -XX:MaxMetaspaceSize=128m"
     volumes:
-      - ../certs:/secrets:ro
+      - ${JWT_CERTS_DIRECTORY:-../certs}:/secrets:ro
     deploy:
       resources:
         limits:
@@ -382,6 +403,7 @@ services:
       - logitrack-net
 
   frontend:
+    image: logitrack-frontend:sprint4-local
     build:
       context: ../logitrack-frontend
       dockerfile: ../deploy/docker/Dockerfile.frontend
@@ -404,9 +426,9 @@ services:
 
 volumes:
   mysql_data:
-    name: logitrack_mysql_data
+    name: ${MYSQL_VOLUME_NAME:-logitrack_mysql_data}
 
 networks:
   logitrack-net:
-    name: logitrack_network
+    name: ${LOGITRACK_NETWORK_NAME:-logitrack_network}
     driver: bridge

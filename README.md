@@ -1,5 +1,7 @@
 # Orquestador Maestro · LogiTrack Microservicios
 
+Para la integración local actual del Sprint 4 usar la [guía de arranque y verificación](docs/SPRINT4-LOCAL.md). Incluye frontend, middleware, observabilidad y correo de prueba. Las instrucciones de cuatro contenedores que siguen describen la base anterior del repositorio.
+
 Este directorio centraliza la infraestructura de contenedores para levantar todo el ecosistema de microservicios con un único comando en **Docker Desktop**.
 
 ## Topología de Contenedores
