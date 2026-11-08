@@ -81,23 +81,22 @@ services:
   config-server:
     container_name: logitrack-config-server
     build:
-      context: ..
-      dockerfile: deploy/docker/Dockerfile.config
+      context: ../config-server
+      dockerfile: Dockerfile
     restart: unless-stopped
     ports:
       - "8888:8888"
     environment:
       SERVER_PORT: 8888
       SERVER_ADDRESS: 0.0.0.0
-      SPRING_PROFILES_ACTIVE: native
-      SPRING_CLOUD_CONFIG_SERVER_NATIVE_SEARCH_LOCATIONS: file:/config
-      JAVA_TOOL_OPTIONS: "-XX:+UseSerialGC -Xms64m -Xmx192m -XX:MaxMetaspaceSize=128m"
-    volumes:
-      - ../config-repo:/config:ro
-    deploy:
-      resources:
-        limits:
-          memory: 320M
+      SPRING_PROFILES_ACTIVE: sprint3
+      CONFIG_GIT_LABEL: ${CONFIG_GIT_LABEL:-develop}
+    healthcheck:
+      test: ["CMD", "bash", "-ec", "exec 3<>/dev/tcp/127.0.0.1/8888; printf 'GET /eureka-server/default HTTP/1.0\\r\\nHost: localhost\\r\\n\\r\\n' >&3; read -r status <&3; [[ $$status == *' 200 '* ]]"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 25s
     networks:
       - logitrack-net
 
@@ -107,21 +106,26 @@ services:
   eureka-server:
     container_name: logitrack-eureka-server
     build:
-      context: ..
-      dockerfile: deploy/docker/Dockerfile.eureka
+      context: ../eureka-server
+      dockerfile: Dockerfile
     restart: unless-stopped
     ports:
-      - "8065:8065"
+      - "${HOST_EUREKA_PORT:-8065}:8065"
     environment:
       SERVER_PORT: 8065
+      SERVER_ADDRESS: 0.0.0.0
+      SPRING_PROFILES_ACTIVE: dev
       CONFIG_SERVER_URL: "http://config-server:8888"
-      JAVA_TOOL_OPTIONS: "-XX:+UseSerialGC -Xms64m -Xmx192m -XX:MaxMetaspaceSize=128m"
-    deploy:
-      resources:
-        limits:
-          memory: 320M
+      SERVICE_HOST: eureka-server
+    healthcheck:
+      test: ["CMD", "bash", "-ec", "exec 3<>/dev/tcp/127.0.0.1/8065; printf 'GET /actuator/health HTTP/1.0\\r\\nHost: localhost\\r\\n\\r\\n' >&3; read -r status <&3; [[ $$status == *' 200 '* ]]"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 25s
     depends_on:
-      - config-server
+      config-server:
+        condition: service_healthy
     networks:
       - logitrack-net
 
@@ -131,21 +135,22 @@ services:
   security-service:
     container_name: logitrack-security-service
     build:
-      context: ..
-      dockerfile: deploy/docker/Dockerfile.security
+      context: ../security-service
+      dockerfile: Dockerfile
     restart: unless-stopped
     ports:
       - "${HOST_SECURITY_PORT:-8083}:8083"
     environment:
       SERVER_PORT: 8083
-      SPRING_PROFILES_ACTIVE: dev
+      SERVER_ADDRESS: 0.0.0.0
+      SPRING_PROFILES_ACTIVE: dev,sprint3
+      CONFIG_SERVER_URL: "http://config-server:8888"
+      EUREKA_CLIENT_ENABLED: "true"
+      EUREKA_SERVER_URL: "http://eureka-server:8065/eureka/"
+      SERVICE_HOST: security-service
       DB_URL: "jdbc:mysql://mysql:3306/security_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC"
       DB_USERNAME: root
       DB_PASSWORD: ${DB_ROOT_PASSWORD:-rootpassword}
-      SPRING_DATA_REDIS_HOST: redis
-      SPRING_DATA_REDIS_PORT: 6379
-      GMAIL_SMTP_USERNAME: ${GMAIL_SMTP_USERNAME}
-      GMAIL_SMTP_APP_PASSWORD: ${GMAIL_SMTP_APP_PASSWORD}
       JWT_PRIVATE_KEY_LOCATION: "file:/secrets/private.pem"
       JWT_PUBLIC_KEY_LOCATION: "file:/secrets/public.pem"
       JWT_KEY_ID: ${JWT_KEY_ID:-logitrack-main}
@@ -153,22 +158,23 @@ services:
       JWT_AUDIENCES: ${JWT_AUDIENCES:-security-service,courier-service,shipment-service,chatbot-service}
       SECURITY_ADMIN_USERNAME: ${SECURITY_ADMIN_USERNAME:-admin}
       SECURITY_ADMIN_PASSWORD: ${SECURITY_ADMIN_PASSWORD:-admin123}
-      CONFIG_SERVER_URL: "http://config-server:8888"
-      EUREKA_SERVER_URL: "http://eureka-server:8065/eureka/"
-      JAVA_TOOL_OPTIONS: "-XX:+UseSerialGC -Xms96m -Xmx224m -XX:MaxMetaspaceSize=128m"
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+      GMAIL_SMTP_USERNAME: ${GMAIL_SMTP_USERNAME:-}
+      GMAIL_SMTP_APP_PASSWORD: ${GMAIL_SMTP_APP_PASSWORD:-}
     volumes:
       - ../certs:/secrets:ro
-    deploy:
-      resources:
-        limits:
-          memory: 350M
     depends_on:
       mysql:
         condition: service_healthy
       redis:
         condition: service_healthy
+      config-server:
+        condition: service_healthy
       eureka-server:
-        condition: service_started
+        condition: service_healthy
     networks:
       - logitrack-net
 
@@ -178,15 +184,19 @@ services:
   courier-service:
     container_name: logitrack-courier-service
     build:
-      context: ..
-      dockerfile: deploy/docker/Dockerfile.courier
+      context: ../courier-service
+      dockerfile: Dockerfile
     restart: unless-stopped
     ports:
       - "${HOST_COURIER_PORT:-8082}:8082"
     environment:
+      SPRING_PROFILES_ACTIVE: dev,sprint3
+      CONFIG_SERVER_URL: "http://config-server:8888"
+      EUREKA_CLIENT_ENABLED: "true"
+      EUREKA_SERVER_URL: "http://eureka-server:8065/eureka/"
+      SERVICE_HOST: courier-service
       SERVER_PORT: 8082
       SERVER_ADDRESS: 0.0.0.0
-      SPRING_PROFILES_ACTIVE: dev
       DB_URL: "jdbc:mysql://mysql:3306/courier_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC"
       DB_USERNAME: root
       DB_PASSWORD: ${DB_ROOT_PASSWORD:-rootpassword}
@@ -200,15 +210,8 @@ services:
       JWT_KEY_ID: ${JWT_KEY_ID:-logitrack-main}
       JWT_ISSUER: ${JWT_ISSUER:-https://security-service}
       JWT_AUDIENCE: courier-service
-      CONFIG_SERVER_URL: "http://config-server:8888"
-      EUREKA_SERVER_URL: "http://eureka-server:8065/eureka/"
-      JAVA_TOOL_OPTIONS: "-XX:+UseSerialGC -Xms96m -Xmx224m -XX:MaxMetaspaceSize=128m"
     volumes:
       - ../certs:/secrets:ro
-    deploy:
-      resources:
-        limits:
-          memory: 350M
     depends_on:
       mysql:
         condition: service_healthy
@@ -216,8 +219,10 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
+      config-server:
+        condition: service_healthy
       eureka-server:
-        condition: service_started
+        condition: service_healthy
     networks:
       - logitrack-net
 
@@ -227,36 +232,37 @@ services:
   shipment-service:
     container_name: logitrack-shipment-service
     build:
-      context: ..
-      dockerfile: deploy/docker/Dockerfile.shipment
+      context: ../shipment-service
+      dockerfile: Dockerfile
     restart: unless-stopped
     ports:
       - "${HOST_SHIPMENT_PORT:-8081}:8081"
     environment:
       SERVER_PORT: 8081
-      SPRING_PROFILES_ACTIVE: dev
+      SERVER_ADDRESS: 0.0.0.0
+      SPRING_PROFILES_ACTIVE: dev,sprint3
+      CONFIG_SERVER_URL: "http://config-server:8888"
+      EUREKA_CLIENT_ENABLED: "true"
+      EUREKA_SERVER_URL: "http://eureka-server:8065/eureka/"
+      SERVICE_HOST: shipment-service
       DB_HOST: mysql
       DB_PORT: 3306
-      DB_NAME: logitrack
+      DB_NAME: shipment_db
       DB_USER: root
       DB_PASSWORD: ${DB_ROOT_PASSWORD:-rootpassword}
+      COURIER_SERVICE_URL: ""
+      DB_URL: "jdbc:mysql://mysql:3306/shipment_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC"
+      DB_USERNAME: root
+      JWT_PUBLIC_KEY_LOCATION: "file:/secrets/public.pem"
+      JWT_KEY_ID: ${JWT_KEY_ID:-logitrack-main}
+      JWT_ISSUER: ${JWT_ISSUER:-https://security-service}
+      JWT_AUDIENCE: shipment-service
       SPRING_DATA_REDIS_HOST: redis
       SPRING_DATA_REDIS_PORT: 6379
       SPRING_RABBITMQ_HOST: rabbitmq
       SPRING_RABBITMQ_PORT: 5672
       SPRING_RABBITMQ_USERNAME: ${RABBITMQ_DEFAULT_USER:-guest}
       SPRING_RABBITMQ_PASSWORD: ${RABBITMQ_DEFAULT_PASS:-guest}
-      COURIER_SERVICE_URL: "http://courier-service:8082"
-      JWT_PUBLIC_KEY_LOCATION: "file:/secrets/public.pem"
-      CONFIG_SERVER_URL: "http://config-server:8888"
-      EUREKA_SERVER_URL: "http://eureka-server:8065/eureka/"
-      JAVA_TOOL_OPTIONS: "-XX:+UseSerialGC -Xms96m -Xmx224m -XX:MaxMetaspaceSize=128m"
-    volumes:
-      - ../certs:/secrets:ro
-    deploy:
-      resources:
-        limits:
-          memory: 350M
     depends_on:
       mysql:
         condition: service_healthy
@@ -264,8 +270,12 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
+      config-server:
+        condition: service_healthy
       eureka-server:
-        condition: service_started
+        condition: service_healthy
+    volumes:
+      - ../certs:/secrets:ro
     networks:
       - logitrack-net
 
@@ -300,9 +310,9 @@ services:
           memory: 350M
     depends_on:
       config-server:
-        condition: service_started
+        condition: service_healthy
       eureka-server:
-        condition: service_started
+        condition: service_healthy
     networks:
       - logitrack-net
 
@@ -312,27 +322,30 @@ services:
   api-gateway:
     container_name: logitrack-api-gateway
     build:
-      context: ..
-      dockerfile: deploy/docker/Dockerfile.gateway
+      context: ../api-gateway
+      dockerfile: Dockerfile
     restart: unless-stopped
     ports:
       - "${HOST_GATEWAY_PORT:-8080}:8080"
     environment:
       SERVER_PORT: 8080
-      SPRING_PROFILES_ACTIVE: dev
-      EUREKA_SERVER_URL: "http://eureka-server:8065/eureka/"
+      SERVER_ADDRESS: 0.0.0.0
+      SPRING_PROFILES_ACTIVE: dev,sprint3
       CONFIG_SERVER_URL: "http://config-server:8888"
+      EUREKA_CLIENT_ENABLED: "true"
+      EUREKA_SERVER_URL: "http://eureka-server:8065/eureka/"
+      SERVICE_HOST: api-gateway
       JWT_PUBLIC_KEY_LOCATION: "file:/secrets/public.pem"
-      JAVA_TOOL_OPTIONS: "-XX:+UseSerialGC -Xms96m -Xmx224m -XX:MaxMetaspaceSize=128m"
+      JWT_KEY_ID: ${JWT_KEY_ID:-logitrack-main}
+      JWT_ISSUER: ${JWT_ISSUER:-https://security-service}
+      JWT_AUDIENCES: ${JWT_AUDIENCES:-security-service,courier-service,shipment-service,chatbot-service}
     volumes:
       - ../certs:/secrets:ro
-    deploy:
-      resources:
-        limits:
-          memory: 350M
     depends_on:
+      config-server:
+        condition: service_healthy
       eureka-server:
-        condition: service_started
+        condition: service_healthy
     networks:
       - logitrack-net
 
