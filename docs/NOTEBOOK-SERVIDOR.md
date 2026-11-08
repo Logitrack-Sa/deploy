@@ -27,8 +27,11 @@ docker compose up -d --wait --wait-timeout 420
 ./backup.sh
 ```
 
-Las aplicaciones son una copia de las versiones locales del 8 de noviembre de 2026;
-no se publicaron cambios de Sprint 4 en GitHub ni Docker Hub. `images.json`
+Frontend y Security se construyen desde sus checkouts de GitHub en
+`source/frontend` y `source/security`. Sus ramas actuales son
+`feature/acceso-integracion-servicios` y `feature/cuentas-integracion`.
+Los demás servicios conservan las imágenes verificadas en la migración inicial.
+No se publicaron estas imágenes nuevas en Docker Hub. `images.json`
 identifica sus IDs, y `sources.json` las revisiones de origen. La configuración
 de Config Server es una copia local fijada en `config/`; no descarga cambios
 de los compañeros automáticamente.
@@ -40,6 +43,10 @@ cuenta de MySQL limitada a su base. Los certificados y passwords no se muestran
 en esta guía.
 
 ## Paneles internos
+
+En el panel web, ADMIN dispone de **Cuentas** para crear accesos vinculados y
+asociar cuentas con clientes o repartidores por nombre. Ver la guía
+`/srv/apps/logitrack/INTEGRACION-CUENTAS.md`, obtenida del checkout de GitHub.
 
 Para abrirlos desde Windows, dejar esta sesión SSH en ejecución:
 
