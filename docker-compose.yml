@@ -61,8 +61,8 @@ services:
       - "${HOST_RABBITMQ_AMQP_PORT:-5672}:5672"
       - "${HOST_RABBITMQ_MGMT_PORT:-15672}:15672"
     environment:
-      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER:-guest}
-      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS:-guest}
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER:?RABBITMQ_DEFAULT_USER es obligatorio}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS:?RABBITMQ_DEFAULT_PASS es obligatorio}
     deploy:
       resources:
         limits:
@@ -91,6 +91,11 @@ services:
       SERVER_ADDRESS: 0.0.0.0
       SPRING_PROFILES_ACTIVE: sprint3
       CONFIG_GIT_LABEL: ${CONFIG_GIT_LABEL:-develop}
+      JAVA_OPTS: "-XX:+UseSerialGC -Xms64m -Xmx192m -XX:MaxMetaspaceSize=96m -Djava.security.egd=file:/dev/./urandom"
+    deploy:
+      resources:
+        limits:
+          memory: 320M
     healthcheck:
       test: ["CMD", "bash", "-ec", "exec 3<>/dev/tcp/127.0.0.1/8888; printf 'GET /eureka-server/default HTTP/1.0\\r\\nHost: localhost\\r\\n\\r\\n' >&3; read -r status <&3; [[ $$status == *' 200 '* ]]"]
       interval: 5s
@@ -117,6 +122,11 @@ services:
       SPRING_PROFILES_ACTIVE: dev
       CONFIG_SERVER_URL: "http://config-server:8888"
       SERVICE_HOST: eureka-server
+      JAVA_OPTS: "-XX:+UseSerialGC -Xms64m -Xmx192m -XX:MaxMetaspaceSize=96m -Djava.security.egd=file:/dev/./urandom"
+    deploy:
+      resources:
+        limits:
+          memory: 320M
     healthcheck:
       test: ["CMD", "bash", "-ec", "exec 3<>/dev/tcp/127.0.0.1/8065; printf 'GET /actuator/health HTTP/1.0\\r\\nHost: localhost\\r\\n\\r\\n' >&3; read -r status <&3; [[ $$status == *' 200 '* ]]"]
       interval: 5s
@@ -142,8 +152,11 @@ services:
       - "${HOST_SECURITY_PORT:-8083}:8083"
     environment:
       SERVER_PORT: 8083
+      MANAGEMENT_SERVER_PORT: 8093
+      MANAGEMENT_SERVER_ADDRESS: 0.0.0.0
+      JAVA_OPTS: "-XX:+UseSerialGC -Xms96m -Xmx224m -XX:MaxMetaspaceSize=128m -Djava.security.egd=file:/dev/./urandom"
       SERVER_ADDRESS: 0.0.0.0
-      SPRING_PROFILES_ACTIVE: dev,sprint3
+      SPRING_PROFILES_ACTIVE: dev,sprint3,sprint4
       CONFIG_SERVER_URL: "http://config-server:8888"
       EUREKA_CLIENT_ENABLED: "true"
       EUREKA_SERVER_URL: "http://eureka-server:8065/eureka/"
@@ -164,6 +177,10 @@ services:
       SPRING_DATA_REDIS_PORT: 6379
       GMAIL_SMTP_USERNAME: ${GMAIL_SMTP_USERNAME:-}
       GMAIL_SMTP_APP_PASSWORD: ${GMAIL_SMTP_APP_PASSWORD:-}
+    deploy:
+      resources:
+        limits:
+          memory: 384M
     volumes:
       - ../certs:/secrets:ro
     depends_on:
@@ -190,12 +207,15 @@ services:
     ports:
       - "${HOST_COURIER_PORT:-8082}:8082"
     environment:
-      SPRING_PROFILES_ACTIVE: dev,sprint3
+      SPRING_PROFILES_ACTIVE: dev,sprint3,sprint4
       CONFIG_SERVER_URL: "http://config-server:8888"
       EUREKA_CLIENT_ENABLED: "true"
       EUREKA_SERVER_URL: "http://eureka-server:8065/eureka/"
       SERVICE_HOST: courier-service
       SERVER_PORT: 8082
+      MANAGEMENT_SERVER_PORT: 8092
+      MANAGEMENT_SERVER_ADDRESS: 0.0.0.0
+      JAVA_TOOL_OPTIONS: "-XX:+UseSerialGC -Xms96m -Xmx224m -XX:MaxMetaspaceSize=128m"
       SERVER_ADDRESS: 0.0.0.0
       DB_URL: "jdbc:mysql://mysql:3306/courier_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC"
       DB_USERNAME: root
@@ -204,12 +224,16 @@ services:
       SPRING_DATA_REDIS_PORT: 6379
       SPRING_RABBITMQ_HOST: rabbitmq
       SPRING_RABBITMQ_PORT: 5672
-      SPRING_RABBITMQ_USERNAME: ${RABBITMQ_DEFAULT_USER:-guest}
-      SPRING_RABBITMQ_PASSWORD: ${RABBITMQ_DEFAULT_PASS:-guest}
+      SPRING_RABBITMQ_USERNAME: ${RABBITMQ_DEFAULT_USER:?RABBITMQ_DEFAULT_USER es obligatorio}
+      SPRING_RABBITMQ_PASSWORD: ${RABBITMQ_DEFAULT_PASS:?RABBITMQ_DEFAULT_PASS es obligatorio}
       JWT_PUBLIC_KEY_LOCATION: "file:/secrets/public.pem"
       JWT_KEY_ID: ${JWT_KEY_ID:-logitrack-main}
       JWT_ISSUER: ${JWT_ISSUER:-https://security-service}
       JWT_AUDIENCE: courier-service
+    deploy:
+      resources:
+        limits:
+          memory: 384M
     volumes:
       - ../certs:/secrets:ro
     depends_on:
@@ -239,8 +263,10 @@ services:
       - "${HOST_SHIPMENT_PORT:-8081}:8081"
     environment:
       SERVER_PORT: 8081
+      MANAGEMENT_SERVER_PORT: 8091
+      MANAGEMENT_SERVER_ADDRESS: 0.0.0.0
       SERVER_ADDRESS: 0.0.0.0
-      SPRING_PROFILES_ACTIVE: dev,sprint3
+      SPRING_PROFILES_ACTIVE: dev,sprint3,sprint4
       CONFIG_SERVER_URL: "http://config-server:8888"
       EUREKA_CLIENT_ENABLED: "true"
       EUREKA_SERVER_URL: "http://eureka-server:8065/eureka/"
@@ -261,8 +287,12 @@ services:
       SPRING_DATA_REDIS_PORT: 6379
       SPRING_RABBITMQ_HOST: rabbitmq
       SPRING_RABBITMQ_PORT: 5672
-      SPRING_RABBITMQ_USERNAME: ${RABBITMQ_DEFAULT_USER:-guest}
-      SPRING_RABBITMQ_PASSWORD: ${RABBITMQ_DEFAULT_PASS:-guest}
+      SPRING_RABBITMQ_USERNAME: ${RABBITMQ_DEFAULT_USER:?RABBITMQ_DEFAULT_USER es obligatorio}
+      SPRING_RABBITMQ_PASSWORD: ${RABBITMQ_DEFAULT_PASS:?RABBITMQ_DEFAULT_PASS es obligatorio}
+    deploy:
+      resources:
+        limits:
+          memory: 384M
     depends_on:
       mysql:
         condition: service_healthy
@@ -292,6 +322,9 @@ services:
       - "${HOST_CHATBOT_PORT:-8084}:8084"
     environment:
       SERVER_PORT: 8084
+      MANAGEMENT_SERVER_PORT: 8094
+      MANAGEMENT_SERVER_ADDRESS: 0.0.0.0
+      SPRING_PROFILES_ACTIVE: sprint4
       CONFIG_SERVER_URL: "http://config-server:8888"
       EUREKA_SERVER_URL: "http://eureka-server:8065/eureka/"
       JWT_PUBLIC_KEY_LOCATION: "file:/secrets/public.pem"
@@ -307,7 +340,7 @@ services:
     deploy:
       resources:
         limits:
-          memory: 350M
+          memory: 384M
     depends_on:
       config-server:
         condition: service_healthy
@@ -329,8 +362,11 @@ services:
       - "${HOST_GATEWAY_PORT:-8080}:8080"
     environment:
       SERVER_PORT: 8080
+      MANAGEMENT_SERVER_PORT: 8090
+      MANAGEMENT_SERVER_ADDRESS: 0.0.0.0
+      JAVA_OPTS: "-XX:+UseSerialGC -Xms96m -Xmx224m -XX:MaxMetaspaceSize=128m -Djava.security.egd=file:/dev/./urandom"
       SERVER_ADDRESS: 0.0.0.0
-      SPRING_PROFILES_ACTIVE: dev,sprint3
+      SPRING_PROFILES_ACTIVE: dev,sprint3,sprint4
       CONFIG_SERVER_URL: "http://config-server:8888"
       EUREKA_CLIENT_ENABLED: "true"
       EUREKA_SERVER_URL: "http://eureka-server:8065/eureka/"
@@ -339,6 +375,10 @@ services:
       JWT_KEY_ID: ${JWT_KEY_ID:-logitrack-main}
       JWT_ISSUER: ${JWT_ISSUER:-https://security-service}
       JWT_AUDIENCES: ${JWT_AUDIENCES:-security-service,courier-service,shipment-service,chatbot-service}
+    deploy:
+      resources:
+        limits:
+          memory: 384M
     volumes:
       - ../certs:/secrets:ro
     depends_on:
