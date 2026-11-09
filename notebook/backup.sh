@@ -11,9 +11,13 @@ mkdir -p "$destination"
 trap 'rm -f "$destination/mysql.sql.gz.partial"' EXIT
 docker compose exec -T mysql sh -c '
   export MYSQL_PWD="$MYSQL_ROOT_PASSWORD"
+  databases="security_db courier_db logitrack shipment_db"
+  if mysql -uroot --batch --skip-column-names -e "SELECT SCHEMA_NAME FROM information_schema.SCHEMATA WHERE SCHEMA_NAME=0x7061796d656e745f6462" | grep -qx payment_db; then
+    databases="$databases payment_db"
+  fi
   exec mysqldump -uroot --single-transaction --routines --triggers --events \
     --set-gtid-purged=OFF --no-tablespaces \
-    --databases security_db courier_db logitrack shipment_db
+    --databases $databases
 ' | gzip > "$destination/mysql.sql.gz.partial"
 gzip -t "$destination/mysql.sql.gz.partial"
 mv "$destination/mysql.sql.gz.partial" "$destination/mysql.sql.gz"

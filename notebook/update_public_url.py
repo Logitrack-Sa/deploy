@@ -1,6 +1,7 @@
 """Actualiza la URL temporal de esta instalación sin reconstruir el frontend."""
 from pathlib import Path
 import subprocess
+import json
 from urllib.parse import urlsplit
 
 root = Path(__file__).resolve().parent
@@ -12,8 +13,10 @@ if parsed.scheme != "https" or not parsed.hostname or not parsed.hostname.endswi
 path = root / ".env"
 lines = path.read_text().splitlines()
 values = dict(line.split("=", 1) for line in lines if line and not line.startswith("#"))
+origins = [item for item in values.get("CORS_ALLOWED_ORIGINS", "").split(",")
+           if item and ".trycloudflare.com" not in item]
 changes = {"LOGITRACK_PUBLIC_URL": url + "/logitrack",
-           "CORS_ALLOWED_ORIGINS": url + ",http://192.168.0.103"}
+           "CORS_ALLOWED_ORIGINS": ",".join(dict.fromkeys([url] + origins))}
 if all(values.get(key) == value for key, value in changes.items()):
     print("La URL pública ya está actualizada")
 else:
@@ -23,6 +26,11 @@ else:
     path.write_text("\n".join(line for line in lines if line.split("=", 1)[0] not in changes)
                     + "\n" + "\n".join(f"{key}={value}" for key, value in changes.items()) + "\n")
     path.chmod(0o600)
-    subprocess.run(["docker", "compose", "up", "-d", "--wait", "--wait-timeout", "240",
-                    "security-service", "api-gateway", "frontend"], cwd=root, check=True)
+    services = ["security-service", "api-gateway", "frontend"]
+    compose = json.loads((root / "compose.yaml").read_text())
+    if "payment-service" in compose["services"]:
+        services.append("payment-service")
+    subprocess.run(["docker", "compose", "up", "-d", "--no-deps", "--wait", "--wait-timeout", "240"] + services, cwd=root, check=True)
+    if "payment-service" in services:
+        print("Actualizar en Mercado Pago el Webhook de prueba:", url + "/logitrack/api/v1/payments/webhooks/mercadopago")
     print("URL pública y orígenes permitidos actualizados")

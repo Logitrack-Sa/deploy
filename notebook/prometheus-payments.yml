@@ -1,0 +1,4 @@
+
+  - job_name: 'payment-service'
+    static_configs:
+      - targets: ['payment-service:18085']
