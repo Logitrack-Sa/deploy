@@ -13,6 +13,9 @@ jobs:
         with:
           persist-credentials: false
       - name: Validar Compose sin iniciar contenedores
+        env:
+          RABBITMQ_DEFAULT_USER: ci_dummy_user
+          RABBITMQ_DEFAULT_PASS: ci_dummy_pass
         run: docker compose config --quiet
       - name: Validar script de compilación
         run: bash -n build-all.sh

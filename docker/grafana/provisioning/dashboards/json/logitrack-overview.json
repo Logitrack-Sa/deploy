@@ -117,8 +117,8 @@
         {
           "datasource": "Prometheus-LogiTrack",
           "editorMode": "code",
-          "expr": "histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket[5m])) by (le, uri))",
-          "legendFormat": "{{uri}}",
+          "expr": "histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket[5m])) by (le, uri, application, instance))",
+          "legendFormat": "{{application}} - {{uri}} - {{instance}}",
           "range": true,
           "refId": "A"
         }
@@ -213,10 +213,18 @@
         {
           "datasource": "Prometheus-LogiTrack",
           "editorMode": "code",
-          "expr": "sum(rate(http_server_requests_seconds_count{status=~\"5..\"}[5m])) / sum(rate(http_server_requests_seconds_count[5m])) * 100",
-          "legendFormat": "Tasa 5xx Global",
+          "expr": "((sum(rate(http_server_requests_seconds_count{status=~\"5..\"}[5m])) by (application, instance) or (0 * (sum(rate(http_server_requests_seconds_count[5m])) by (application, instance) > 0))) / (sum(rate(http_server_requests_seconds_count[5m])) by (application, instance) > 0)) * 100",
+          "legendFormat": "{{application}} - {{instance}} (0% = sin errores, sin serie = sin tráfico)",
           "range": true,
           "refId": "A"
+        },
+        {
+          "datasource": "Prometheus-LogiTrack",
+          "editorMode": "code",
+          "expr": "up{job=~\"api-gateway|security-service|shipment-service|courier-service|chatbot-service\"} == 0",
+          "legendFormat": "TARGET DOWN - {{job}} - {{instance}}",
+          "range": true,
+          "refId": "B"
         }
       ],
       "title": "Tasa de Errores 5xx",
@@ -321,8 +329,8 @@
         {
           "datasource": "Prometheus-LogiTrack",
           "editorMode": "code",
-          "expr": "jvm_memory_used_bytes{area=\"heap\"} / jvm_memory_max_bytes{area=\"heap\"} * 100",
-          "legendFormat": "{{application}} Heap (%)",
+          "expr": "sum(jvm_memory_used_bytes{area=\"heap\"} and on(application, instance, id) (jvm_memory_max_bytes{area=\"heap\"} > 0)) by (application, instance) / sum((jvm_memory_max_bytes{area=\"heap\"} > 0) and on(application, instance, id) jvm_memory_used_bytes{area=\"heap\"}) by (application, instance) * 100",
+          "legendFormat": "{{application}} - {{instance}} Heap (%)",
           "range": true,
           "refId": "A"
         }
@@ -417,8 +425,8 @@
         {
           "datasource": "Prometheus-LogiTrack",
           "editorMode": "code",
-          "expr": "hikaricp_connections_active{pool=\"HikariPool-1\"}",
-          "legendFormat": "{{application}} - Activas",
+          "expr": "hikaricp_connections_active",
+          "legendFormat": "{{application}} - {{pool}} - {{instance}} - Activas",
           "range": true,
           "refId": "A"
         },
@@ -426,7 +434,7 @@
           "datasource": "Prometheus-LogiTrack",
           "editorMode": "code",
           "expr": "hikaricp_connections_max",
-          "legendFormat": "{{application}} - Max",
+          "legendFormat": "{{application}} - {{pool}} - {{instance}} - Max",
           "range": true,
           "refId": "B"
         }
@@ -521,8 +529,8 @@
         {
           "datasource": "Prometheus-LogiTrack",
           "editorMode": "code",
-          "expr": "sum(rate(cache_gets_total{result=\"hit\"}[5m])) / sum(rate(cache_gets_total[5m])) * 100",
-          "legendFormat": "Cache Hit Ratio (%)",
+          "expr": "((sum(rate(cache_gets_total{result=\"hit\", application=\"security-service\"}[5m])) by (application, instance) or (0 * (sum(rate(cache_gets_total{application=\"security-service\"}[5m])) by (application, instance) > 0))) / (sum(rate(cache_gets_total{application=\"security-service\"}[5m])) by (application, instance) > 0)) * 100",
+          "legendFormat": "security-service - {{instance}} Cache Hit Ratio (%)",
           "range": true,
           "refId": "A"
         }
