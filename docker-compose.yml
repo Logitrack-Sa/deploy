@@ -305,10 +305,10 @@ services:
       JWT_ISSUER: ${JWT_ISSUER:-https://security-service}
       JWT_KEY_ID: ${JWT_KEY_ID:-logitrack-main}
       AI_API_KEY: ${AI_API_KEY:-}
-      AI_MODEL: ${AI_MODEL:-}
-      AI_BASE_URL: ${AI_BASE_URL:-https://api.openai.com}
-      AI_COMPLETIONS_PATH: ${AI_COMPLETIONS_PATH:-/v1/chat/completions}
-      JAVA_TOOL_OPTIONS: "-XX:+UseSerialGC -Xms32m -Xmx224m -XX:MaxMetaspaceSize=96m -XX:ReservedCodeCacheSize=32m -Xss256k"
+      AI_MODEL: ${AI_MODEL:-gemini-3.5-flash-lite}
+      AI_BASE_URL: ${AI_BASE_URL:-https://generativelanguage.googleapis.com/v1beta/openai}
+      AI_COMPLETIONS_PATH: ${AI_COMPLETIONS_PATH:-/chat/completions}
+      JAVA_TOOL_OPTIONS: "-Djava.net.preferIPv4Stack=true -XX:+UseSerialGC -Xms32m -Xmx224m -XX:MaxMetaspaceSize=96m -XX:ReservedCodeCacheSize=32m -Xss256k"
     volumes:
       - ${JWT_CERTS_DIRECTORY:-../certs}/public.pem:/secrets/public.pem:ro
     deploy:
