@@ -100,7 +100,7 @@ services:
       SERVER_ADDRESS: 0.0.0.0
       SPRING_PROFILES_ACTIVE: discovery
       CONFIG_GIT_LABEL: ${CONFIG_GIT_LABEL:-main}
-      JAVA_OPTS: "-XX:+UseSerialGC -Xms64m -Xmx192m -XX:MaxMetaspaceSize=96m -Djava.security.egd=file:/dev/./urandom"
+      JAVA_TOOL_OPTIONS: "-XX:+UseSerialGC -Xms64m -Xmx192m -XX:MaxMetaspaceSize=96m -Djava.security.egd=file:/dev/./urandom"
     deploy:
       resources:
         limits:
@@ -131,7 +131,7 @@ services:
       SPRING_PROFILES_ACTIVE: dev
       CONFIG_SERVER_URL: "http://config-server:8888"
       SERVICE_HOST: eureka-server
-      JAVA_OPTS: "-XX:+UseSerialGC -Xms64m -Xmx192m -XX:MaxMetaspaceSize=96m -Djava.security.egd=file:/dev/./urandom"
+      JAVA_TOOL_OPTIONS: "-XX:+UseSerialGC -Xms64m -Xmx192m -XX:MaxMetaspaceSize=96m -Djava.security.egd=file:/dev/./urandom"
     deploy:
       resources:
         limits:
@@ -502,7 +502,7 @@ services:
       MERCADOPAGO_ACCESS_TOKEN: ${MERCADOPAGO_ACCESS_TOKEN:-}
       MERCADOPAGO_WEBHOOK_SECRET: ${MERCADOPAGO_WEBHOOK_SECRET:-}
       SHIPMENT_SERVICE_URL: http://shipment-service:8081
-      JAVA_OPTS: -XX:+UseSerialGC -Xms64m -Xmx192m -XX:MaxMetaspaceSize=96m
+      JAVA_TOOL_OPTIONS: -XX:+UseSerialGC -Xms64m -Xmx192m -XX:MaxMetaspaceSize=96m
     volumes:
       - ${JWT_CERTS_DIRECTORY:-../certs}/public.pem:/secrets/public.pem:ro
     deploy:
