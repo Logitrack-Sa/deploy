@@ -59,7 +59,7 @@ def verify(directory, base_url=None):
     profile = call("GET", "/api/v1/auth/me", token=admin)
     assert profile["emailVerified"] is True
     run = secrets.token_hex(6)
-    customer = call("POST", "/api/v1/customers", {"name": "Prueba Sprint 4 " + run, "email": run + "@example.test", "phone": "123456"}, admin, 201)
+    customer = call("POST", "/api/v1/customers", {"name": "Prueba de integración " + run, "email": run + "@example.test", "phone": "123456"}, admin, 201)
     call("POST", "/api/v1/customers", {"name": "", "email": "incorrecto"}, admin, 400)
     call("GET", "/api/v1/customers?page=0&size=10", token=admin)
     call("GET", "/api/v1/customers/" + customer["id"], token=admin)
@@ -120,7 +120,7 @@ def verify(directory, base_url=None):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--directory", default="target/sprint4")
+    parser.add_argument("--directory", default="target/local")
     parser.add_argument("--base-url", help="URL propia del Gateway, incluyendo el prefijo público si existe")
     args = parser.parse_args()
     verify(args.directory, args.base_url)

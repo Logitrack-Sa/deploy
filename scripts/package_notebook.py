@@ -28,11 +28,11 @@ def prepare(directory, public_url):
     root.mkdir(parents=True, exist_ok=True)
     if any(root.iterdir()):
         raise ValueError('La carpeta de entrega ya contiene archivos; elegir otra.')
-    env = dict(line.split("=", 1) for line in (DEPLOY / "target/sprint4/runtime.env").read_text().splitlines() if line and not line.startswith("#"))
+    env = dict(line.split("=", 1) for line in (DEPLOY / "target/local/runtime.env").read_text().splitlines() if line and not line.startswith("#"))
     env.pop("JWT_CERTS_DIRECTORY", None)
-    config = json.loads(run("docker", "compose", "--env-file", str(DEPLOY / "target/sprint4/runtime.env"),
+    config = json.loads(run("docker", "compose", "--env-file", str(DEPLOY / "target/local/runtime.env"),
                             "-f", str(DEPLOY / "docker-compose.yml"), "-f", str(DEPLOY / "docker-compose.local.yml"),
-                            "-p", "logitrack-sprint4-local", "config", "--format", "json"))
+                            "-p", "logitrack-local-local", "config", "--format", "json"))
     project = {"name": "logitrack-notebook", "services": {}, "volumes": {},
                "networks": {"app": {}, "proxy": {"external": True, "name": "proxy"}}}
     date = datetime.now().strftime("%Y%m%d")
@@ -40,7 +40,7 @@ def prepare(directory, public_url):
     env.update({"LOGITRACK_PUBLIC_URL": public_url.rstrip("/") + "/logitrack",
                 "HOST_GATEWAY_PORT": "18080", "HOST_MAILPIT_PORT": "18025"})
     parsed_url = urlsplit(public_url)
-    env["CORS_ALLOWED_ORIGINS"] = f"{parsed_url.scheme}://{parsed_url.netloc},http://192.168.0.103"
+    env["CORS_ALLOWED_ORIGINS"] = f"{parsed_url.scheme}://{parsed_url.netloc}"
     for name in ("SECURITY_DB_PASSWORD", "COURIER_DB_PASSWORD", "SHIPMENT_DB_PASSWORD"):
         env[name] = secrets.token_hex(24)
     secret_names = {"MYSQL_ROOT_PASSWORD": "DB_ROOT_PASSWORD", "DB_PASSWORD": "DB_ROOT_PASSWORD",
@@ -57,7 +57,7 @@ def prepare(directory, public_url):
         service = dict(source)
         if 'deploy' in service:
             service['deploy'].pop('placement', None)
-        image = "logitrack-frontend:notebook" if name == "frontend" else service.get("image", f"logitrack-sprint4-local-{name}:latest")
+        image = "logitrack-frontend:notebook" if name == "frontend" else service.get("image", f"logitrack-local-local-{name}:latest")
         image_id = run("docker", "image", "inspect", image, "--format", "{{.Id}}")
         tag = f"logitrack-notebook-{name}:{date}"
         subprocess.run(["docker", "tag", image_id, tag], check=True)
@@ -139,7 +139,7 @@ def prepare(directory, public_url):
         archive.extractall(root / "config", filter="data")
     config_tar.unlink()
     for name in ("private.pem", "public.pem"):
-        shutil.copyfile(DEPLOY / "target/sprint4/certs" / name, root / "secrets" / name)
+        shutil.copyfile(DEPLOY / "target/local/certs" / name, root / "secrets" / name)
     shutil.copytree(DEPLOY / "docker/prometheus", root / "docker/prometheus")
     prometheus = root / "docker/prometheus/prometheus.yml"
     prometheus.write_text(prometheus.read_text().split("  - job_name: 'chatbot-service'")[0].rstrip() + "\n")
@@ -162,7 +162,7 @@ def prepare(directory, public_url):
     (root / "compose.yaml").write_text(json.dumps(project, indent=2), encoding="utf-8")
     (root / ".env").write_text("\n".join(f"{key}={value}" for key, value in env.items()) + "\n", encoding="utf-8")
     (root / "images.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
-    (root / "sources.json").write_text((DEPLOY / "target/sprint4/sources.json").read_text(), encoding="utf-8")
+    (root / "sources.json").write_text((DEPLOY / "target/local/sources.json").read_text(), encoding="utf-8")
     # Detectar secretos de runtime que se hayan incrustado accidentalmente en Compose.
     serialized = (root / "compose.yaml").read_text()
     for key, value in env.items():

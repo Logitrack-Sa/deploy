@@ -14,9 +14,13 @@ services:
     container_name: logitrack-mysql
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-rootpassword}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?Definir DB_ROOT_PASSWORD}
+      SECURITY_DB_PASSWORD: ${SECURITY_DB_PASSWORD:?Definir SECURITY_DB_PASSWORD}
+      COURIER_DB_PASSWORD: ${COURIER_DB_PASSWORD:?Definir COURIER_DB_PASSWORD}
+      SHIPMENT_DB_PASSWORD: ${SHIPMENT_DB_PASSWORD:?Definir SHIPMENT_DB_PASSWORD}
+      PAYMENT_DB_PASSWORD: ${PAYMENT_DB_PASSWORD:?Definir PAYMENT_DB_PASSWORD}
     ports:
-      - "${HOST_MYSQL_PORT:-3307}:3306"
+      - "127.0.0.1:${HOST_MYSQL_PORT:-3307}:3306"
     volumes:
       - mysql_data:/var/lib/mysql
       - ./mysql-init:/docker-entrypoint-initdb.d:ro
@@ -42,7 +46,7 @@ services:
     restart: unless-stopped
     command: ["redis-server", "--maxmemory", "96mb", "--maxmemory-policy", "volatile-lru"]
     ports:
-      - "${HOST_REDIS_PORT:-6379}:6379"
+      - "127.0.0.1:${HOST_REDIS_PORT:-6379}:6379"
     deploy:
       resources:
         limits:
@@ -63,8 +67,8 @@ services:
     container_name: logitrack-rabbitmq
     restart: unless-stopped
     ports:
-      - "${HOST_RABBITMQ_AMQP_PORT:-5672}:5672"
-      - "${HOST_RABBITMQ_MGMT_PORT:-15672}:15672"
+      - "127.0.0.1:${HOST_RABBITMQ_AMQP_PORT:-5672}:5672"
+      - "127.0.0.1:${HOST_RABBITMQ_MGMT_PORT:-15672}:15672"
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER:?RABBITMQ_DEFAULT_USER es obligatorio}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS:?RABBITMQ_DEFAULT_PASS es obligatorio}
@@ -94,8 +98,8 @@ services:
     environment:
       SERVER_PORT: 8888
       SERVER_ADDRESS: 0.0.0.0
-      SPRING_PROFILES_ACTIVE: sprint3
-      CONFIG_GIT_LABEL: ${CONFIG_GIT_LABEL:-develop}
+      SPRING_PROFILES_ACTIVE: discovery
+      CONFIG_GIT_LABEL: ${CONFIG_GIT_LABEL:-main}
       JAVA_OPTS: "-XX:+UseSerialGC -Xms64m -Xmx192m -XX:MaxMetaspaceSize=96m -Djava.security.egd=file:/dev/./urandom"
     deploy:
       resources:
@@ -154,7 +158,7 @@ services:
       dockerfile: Dockerfile
     restart: unless-stopped
     ports:
-      - "${HOST_SECURITY_PORT:-8083}:8083"
+      - "127.0.0.1:${HOST_SECURITY_PORT:-8083}:8083"
     environment:
       <<: *discovery-env
       SERVER_PORT: 8083
@@ -162,14 +166,14 @@ services:
       MANAGEMENT_SERVER_ADDRESS: 0.0.0.0
       JAVA_OPTS: "-XX:+UseSerialGC -Xms96m -Xmx224m -XX:MaxMetaspaceSize=128m -Djava.security.egd=file:/dev/./urandom"
       SERVER_ADDRESS: 0.0.0.0
-      SPRING_PROFILES_ACTIVE: dev,sprint3,sprint4
+      SPRING_PROFILES_ACTIVE: dev,discovery,observability
       CONFIG_SERVER_URL: "http://config-server:8888"
       EUREKA_CLIENT_ENABLED: "true"
       EUREKA_SERVER_URL: "http://eureka-server:8065/eureka/"
       SERVICE_HOST: security-service
       DB_URL: "jdbc:mysql://mysql:3306/security_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC"
-      DB_USERNAME: root
-      DB_PASSWORD: ${DB_ROOT_PASSWORD:-rootpassword}
+      DB_USERNAME: security_app
+      DB_PASSWORD: ${SECURITY_DB_PASSWORD:?Definir SECURITY_DB_PASSWORD}
       JWT_PRIVATE_KEY_LOCATION: "file:/secrets/private.pem"
       JWT_PUBLIC_KEY_LOCATION: "file:/secrets/public.pem"
       JWT_KEY_ID: ${JWT_KEY_ID:-logitrack-main}
@@ -179,19 +183,20 @@ services:
       SECURITY_ADMIN_ENABLED: ${SECURITY_ADMIN_ENABLED:-false}
       SECURITY_ADMIN_EMAIL: ${SECURITY_ADMIN_EMAIL:-admin@logitrack.com}
       SECURITY_ADMIN_USERNAME: ${SECURITY_ADMIN_USERNAME:-admin}
-      SECURITY_ADMIN_PASSWORD: ${SECURITY_ADMIN_PASSWORD:-admin123}
+      SECURITY_ADMIN_PASSWORD: ${SECURITY_ADMIN_PASSWORD:?Definir SECURITY_ADMIN_PASSWORD}
       REDIS_HOST: redis
       REDIS_PORT: 6379
       SPRING_DATA_REDIS_HOST: redis
       SPRING_DATA_REDIS_PORT: 6379
       GMAIL_SMTP_USERNAME: ${GMAIL_SMTP_USERNAME:-}
       GMAIL_SMTP_APP_PASSWORD: ${GMAIL_SMTP_APP_PASSWORD:-}
+      FRONTEND_URL: ${LOGITRACK_PUBLIC_URL:-http://localhost:3000}
     deploy:
       resources:
         limits:
           memory: 384M
     volumes:
-      - ../certs:/secrets:ro
+      - ${JWT_CERTS_DIRECTORY:-../certs}:/secrets:ro
     depends_on:
       mysql:
         condition: service_healthy
@@ -214,10 +219,10 @@ services:
       dockerfile: Dockerfile
     restart: unless-stopped
     ports:
-      - "${HOST_COURIER_PORT:-8082}:8082"
+      - "127.0.0.1:${HOST_COURIER_PORT:-8082}:8082"
     environment:
       <<: *discovery-env
-      SPRING_PROFILES_ACTIVE: dev,sprint3,sprint4
+      SPRING_PROFILES_ACTIVE: dev,discovery,observability
       CONFIG_SERVER_URL: "http://config-server:8888"
       EUREKA_CLIENT_ENABLED: "true"
       EUREKA_SERVER_URL: "http://eureka-server:8065/eureka/"
@@ -228,8 +233,8 @@ services:
       JAVA_TOOL_OPTIONS: "-XX:+UseSerialGC -Xms96m -Xmx224m -XX:MaxMetaspaceSize=128m"
       SERVER_ADDRESS: 0.0.0.0
       DB_URL: "jdbc:mysql://mysql:3306/courier_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC"
-      DB_USERNAME: root
-      DB_PASSWORD: ${DB_ROOT_PASSWORD:-rootpassword}
+      DB_USERNAME: courier_app
+      DB_PASSWORD: ${COURIER_DB_PASSWORD:?Definir COURIER_DB_PASSWORD}
       SPRING_DATA_REDIS_HOST: redis
       SPRING_DATA_REDIS_PORT: 6379
       SPRING_RABBITMQ_HOST: rabbitmq
@@ -245,7 +250,7 @@ services:
         limits:
           memory: 384M
     volumes:
-      - ../certs:/secrets:ro
+      - ${JWT_CERTS_DIRECTORY:-../certs}:/secrets:ro
     depends_on:
       mysql:
         condition: service_healthy
@@ -270,14 +275,14 @@ services:
       dockerfile: Dockerfile
     restart: unless-stopped
     ports:
-      - "${HOST_SHIPMENT_PORT:-8081}:8081"
+      - "127.0.0.1:${HOST_SHIPMENT_PORT:-8081}:8081"
     environment:
       <<: *discovery-env
       SERVER_PORT: 8081
       MANAGEMENT_SERVER_PORT: 8091
       MANAGEMENT_SERVER_ADDRESS: 0.0.0.0
       SERVER_ADDRESS: 0.0.0.0
-      SPRING_PROFILES_ACTIVE: dev,sprint3,sprint4
+      SPRING_PROFILES_ACTIVE: dev,discovery,observability
       CONFIG_SERVER_URL: "http://config-server:8888"
       EUREKA_CLIENT_ENABLED: "true"
       EUREKA_SERVER_URL: "http://eureka-server:8065/eureka/"
@@ -285,11 +290,11 @@ services:
       DB_HOST: mysql
       DB_PORT: 3306
       DB_NAME: shipment_db
-      DB_USER: root
-      DB_PASSWORD: ${DB_ROOT_PASSWORD:-rootpassword}
+      DB_USER: shipment_app
+      DB_PASSWORD: ${SHIPMENT_DB_PASSWORD:?Definir SHIPMENT_DB_PASSWORD}
       COURIER_SERVICE_URL: ""
       DB_URL: "jdbc:mysql://mysql:3306/shipment_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC"
-      DB_USERNAME: root
+      DB_USERNAME: shipment_app
       JWT_PUBLIC_KEY_LOCATION: "file:/secrets/public.pem"
       JWT_KEY_ID: ${JWT_KEY_ID:-logitrack-main}
       JWT_ISSUER: ${JWT_ISSUER:-https://security-service}
@@ -316,7 +321,7 @@ services:
       eureka-server:
         condition: service_healthy
     volumes:
-      - ../certs:/secrets:ro
+      - ${JWT_CERTS_DIRECTORY:-../certs}:/secrets:ro
     networks:
       - logitrack-net
 
@@ -326,26 +331,27 @@ services:
   chatbot-service:
     container_name: logitrack-chatbot-service
     build:
-      context: ..
-      dockerfile: deploy/docker/Dockerfile.chatbot
+      context: ../chatbot-service
+      dockerfile: Dockerfile
     restart: unless-stopped
     ports:
-      - "${HOST_CHATBOT_PORT:-8084}:8084"
+      - "127.0.0.1:${HOST_CHATBOT_PORT:-8084}:8084"
     environment:
       <<: *discovery-env
       SERVER_PORT: 8084
       MANAGEMENT_SERVER_PORT: 8094
       MANAGEMENT_SERVER_ADDRESS: 0.0.0.0
-      SPRING_PROFILES_ACTIVE: sprint4
+      SPRING_PROFILES_ACTIVE: observability
       CONFIG_SERVER_URL: "http://config-server:8888"
       EUREKA_SERVER_URL: "http://eureka-server:8065/eureka/"
       JWT_PUBLIC_KEY_LOCATION: "file:/secrets/public.pem"
       JWT_ISSUER: ${JWT_ISSUER:-https://security-service}
       JWT_KEY_ID: ${JWT_KEY_ID:-logitrack-main}
       AI_API_KEY: ${AI_API_KEY:-}
-      AI_MODEL: ${AI_MODEL:-gemini-3.5-flash-lite}
-      AI_BASE_URL: ${AI_BASE_URL:-https://generativelanguage.googleapis.com/v1beta/openai}
-      AI_COMPLETIONS_PATH: ${AI_COMPLETIONS_PATH:-/chat/completions}
+      AI_MODEL: ${AI_MODEL:-}
+      AI_BASE_URL: ${AI_BASE_URL:-https://api.openai.com}
+      AI_COMPLETIONS_PATH: ${AI_COMPLETIONS_PATH:-/v1/chat/completions}
+      GEMINI_PROXY_ENABLED: ${GEMINI_PROXY_ENABLED:-false}
       JAVA_TOOL_OPTIONS: "-Djava.net.preferIPv4Stack=true -XX:+UseSerialGC -Xms32m -Xmx224m -XX:MaxMetaspaceSize=96m -XX:ReservedCodeCacheSize=32m -Xss256k"
     volumes:
       - ${JWT_CERTS_DIRECTORY:-../certs}/public.pem:/secrets/public.pem:ro
@@ -379,7 +385,7 @@ services:
       MANAGEMENT_SERVER_ADDRESS: 0.0.0.0
       JAVA_OPTS: "-XX:+UseSerialGC -Xms96m -Xmx224m -XX:MaxMetaspaceSize=128m -Djava.security.egd=file:/dev/./urandom"
       SERVER_ADDRESS: 0.0.0.0
-      SPRING_PROFILES_ACTIVE: dev,sprint3,sprint4
+      SPRING_PROFILES_ACTIVE: dev,discovery,observability
       CONFIG_SERVER_URL: "http://config-server:8888"
       EUREKA_CLIENT_ENABLED: "true"
       EUREKA_SERVER_URL: "http://eureka-server:8065/eureka/"
@@ -393,7 +399,7 @@ services:
         limits:
           memory: 384M
     volumes:
-      - ../certs:/secrets:ro
+      - ${JWT_CERTS_DIRECTORY:-../certs}:/secrets:ro
     depends_on:
       config-server:
         condition: service_healthy
@@ -410,7 +416,7 @@ services:
     container_name: logitrack-prometheus
     restart: unless-stopped
     ports:
-      - "${HOST_PROMETHEUS_PORT:-9090}:9090"
+      - "127.0.0.1:${HOST_PROMETHEUS_PORT:-9090}:9090"
     volumes:
       - ./docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
     command:
@@ -431,10 +437,10 @@ services:
     container_name: logitrack-grafana
     restart: unless-stopped
     ports:
-      - "${HOST_GRAFANA_PORT:-3001}:3000"
+      - "127.0.0.1:${HOST_GRAFANA_PORT:-3001}:3000"
     environment:
       - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
-      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin123}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:?Definir GRAFANA_ADMIN_PASSWORD}
       - GF_USERS_ALLOW_SIGN_UP=false
     volumes:
       - ./docker/grafana/provisioning:/etc/grafana/provisioning:ro
@@ -448,14 +454,16 @@ services:
       - logitrack-net
 
   frontend:
-    image: logitrack-frontend:sprint4-local
+    image: logitrack-frontend:local
     build:
       context: ../logitrack-frontend
       dockerfile: Dockerfile
       args:
         NEXT_PUBLIC_API_GATEWAY_URL: "${FRONTEND_API_GATEWAY_URL:-http://localhost:8080}"
+        NEXT_PUBLIC_BASE_PATH: "${FRONTEND_BASE_PATH:-}"
+        NEXT_PUBLIC_PAYMENTS_ENABLED: "${FRONTEND_PAYMENTS_ENABLED:-false}"
         NEXT_PUBLIC_COURIER_STATUS_MODEL: "${FRONTEND_COURIER_STATUS_MODEL:-legacy}"
-        NEXT_PUBLIC_CUSTOMER_CANCELLATION_ENABLED: "${FRONTEND_CUSTOMER_CANCELLATION_ENABLED:-false}"
+        NEXT_PUBLIC_CUSTOMER_CANCELLATION_ENABLED: "${FRONTEND_CUSTOMER_CANCELLATION_ENABLED:-true}"
     restart: unless-stopped
     ports:
       - "127.0.0.1:${HOST_FRONTEND_PORT:-3000}:3000"
@@ -466,6 +474,54 @@ services:
     depends_on:
       api-gateway:
         condition: service_started
+    networks:
+      - logitrack-net
+
+  payment-service:
+    build:
+      context: ../payment-service
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${HOST_PAYMENT_PORT:-8085}:8085"
+    environment:
+      <<: *discovery-env
+      SERVER_PORT: 8085
+      MANAGEMENT_SERVER_PORT: 18085
+      PAYMENT_DB_URL: jdbc:mysql://mysql:3306/payment_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      PAYMENT_DB_USERNAME: payment_app
+      PAYMENT_DB_PASSWORD: ${PAYMENT_DB_PASSWORD:?Definir PAYMENT_DB_PASSWORD}
+      CONFIG_SERVER_URL: http://config-server:8888
+      EUREKA_SERVER_URL: http://eureka-server:8065/eureka/
+      JWT_PUBLIC_KEY_LOCATION: file:/secrets/public.pem
+      JWT_KEY_ID: ${JWT_KEY_ID:?Definir JWT_KEY_ID}
+      JWT_ISSUER: ${JWT_ISSUER:-https://security-service}
+      LOGITRACK_PUBLIC_URL: ${LOGITRACK_PUBLIC_URL:-http://localhost:3000}
+      PAYMENTS_ENABLED: ${PAYMENTS_ENABLED:-false}
+      MERCADOPAGO_SANDBOX: ${MERCADOPAGO_SANDBOX:-true}
+      MERCADOPAGO_ACCESS_TOKEN: ${MERCADOPAGO_ACCESS_TOKEN:-}
+      MERCADOPAGO_WEBHOOK_SECRET: ${MERCADOPAGO_WEBHOOK_SECRET:-}
+      SHIPMENT_SERVICE_URL: http://shipment-service:8081
+      JAVA_OPTS: -XX:+UseSerialGC -Xms64m -Xmx192m -XX:MaxMetaspaceSize=96m
+    volumes:
+      - ${JWT_CERTS_DIRECTORY:-../certs}:/secrets:ro
+    deploy:
+      resources:
+        limits:
+          memory: 320M
+    healthcheck:
+      test: ["CMD", "bash", "-ec", "exec 3<>/dev/tcp/127.0.0.1/18085; printf 'GET /actuator/health HTTP/1.0\\r\\nHost: localhost\\r\\n\\r\\n' >&3; read -r status <&3; [[ $$status == *' 200 '* ]]"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+    depends_on:
+      mysql:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
     networks:
       - logitrack-net
 

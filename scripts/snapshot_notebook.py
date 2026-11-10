@@ -14,9 +14,9 @@ def snapshot(directory):
     root.mkdir(parents=True, exist_ok=True)
     if (root / 'mysql.sql.gz').exists():
         raise ValueError('Ya hay un respaldo de migración; no se sobrescribe.')
-    command = ['docker', 'compose', '--env-file', str(DEPLOY / 'target/sprint4/runtime.env'),
+    command = ['docker', 'compose', '--env-file', str(DEPLOY / 'target/local/runtime.env'),
                '-f', str(DEPLOY / 'docker-compose.yml'), '-f', str(DEPLOY / 'docker-compose.local.yml'),
-               '-p', 'logitrack-sprint4-local', 'stop', 'frontend', 'api-gateway', 'security-service',
+               '-p', 'logitrack-local-local', 'stop', 'frontend', 'api-gateway', 'security-service',
                'courier-service', 'shipment-service', 'grafana', 'prometheus']
     subprocess.run(command, check=True)
     sql = "SELECT JSON_OBJECT('customers',(SELECT COUNT(*) FROM logitrack.customers),'shipments',(SELECT COUNT(*) FROM logitrack.shipments),'couriers',(SELECT COUNT(*) FROM courier_db.couriers),'users',(SELECT COUNT(*) FROM security_db.users));"
