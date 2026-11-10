@@ -63,9 +63,9 @@ def verify(directory, base_url=None):
     call("GET", "/api/v1/customers?page=0&size=10", token=admin)
     call("GET", "/api/v1/customers/" + customer["id"], token=admin)
     courier = call("POST", "/api/v1/couriers", {"name": "Repartidor " + run, "dni": str(secrets.randbelow(90000000) + 10000000), "vehicleType": "MOTO"}, admin, 201)
-    call("GET", "/api/v1/couriers?status=AVAILABLE&page=0&size=10", token=admin)
+    call("GET", "/api/v1/couriers?status=ACTIVO&page=0&size=10", token=admin)
     call("GET", "/api/v1/couriers/" + courier["id"], token=admin)
-    for courier_status in ("INACTIVE", "BUSY", "AVAILABLE"):
+    for courier_status in ("INACTIVO", "ACTIVO"):
         assert call("PATCH", "/api/v1/couriers/" + courier["id"] + "/status", {"status": courier_status}, admin)["status"] == courier_status
     address = {"street": "Bolivia", "number": "1239", "city": "Jujuy", "postalCode": "4600"}
     shipment_body = {"customerId": customer["id"], "origin": address, "destination": address, "weightKg": 2.5, "widthCm": 30, "heightCm": 20, "lengthCm": 40}
@@ -75,8 +75,28 @@ def verify(directory, base_url=None):
     assert call("GET", route, token=admin)["courierId"] == courier["id"]
     call("GET", "/api/v1/shipments/tracking/" + shipment["trackingCode"], token=admin)
     call("GET", "/api/v1/shipments?status=PENDIENTE&page=0&size=10", token=admin)
+    parallel_shipment = call("POST", "/api/v1/shipments", shipment_body, admin, 201)
+    parallel_route = "/api/v1/shipments/" + parallel_shipment["id"]
+    call("PUT", parallel_route + "/courier", {"courierId": courier["id"]}, admin)
     call("PATCH", route + "/status", {"status": "EN_RUTA", "observation": "Prueba local"}, admin)
+    call("PATCH", parallel_route + "/status", {"status": "EN_RUTA"}, admin)
+
+    def wait_availability(expected):
+        deadline = time.monotonic() + 45
+        while True:
+            availability = call("GET", "/api/v1/couriers/" + courier["id"] + "/availability", token=admin)
+            assert availability["status"] == "ACTIVO"
+            if availability["available"] is expected:
+                return
+            if time.monotonic() >= deadline:
+                raise TimeoutError("RabbitMQ no actualizó la disponibilidad del repartidor")
+            time.sleep(1)
+
+    wait_availability(False)
     call("PATCH", route + "/status", {"status": "ENTREGADO"}, admin)
+    wait_availability(False)
+    call("PATCH", parallel_route + "/status", {"status": "ENTREGADO"}, admin)
+    wait_availability(True)
     call("PATCH", route + "/status", {"status": "EN_RUTA"}, admin, 422)
     call("GET", route + "/history", token=admin)
     cancelled = call("POST", "/api/v1/shipments", shipment_body, admin, 201)
