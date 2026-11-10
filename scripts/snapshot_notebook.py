@@ -16,15 +16,15 @@ def snapshot(directory):
         raise ValueError('Ya hay un respaldo de migración; no se sobrescribe.')
     command = ['docker', 'compose', '--env-file', str(DEPLOY / 'target/local/runtime.env'),
                '-f', str(DEPLOY / 'docker-compose.yml'), '-f', str(DEPLOY / 'docker-compose.local.yml'),
-               '-p', 'logitrack-local-local', 'stop', 'frontend', 'api-gateway', 'security-service',
-               'courier-service', 'shipment-service', 'grafana', 'prometheus']
+               '-p', 'logitrack-local', 'stop', 'frontend', 'api-gateway', 'security-service',
+               'courier-service', 'shipment-service', 'payment-service', 'chatbot-service', 'grafana', 'prometheus']
     subprocess.run(command, check=True)
-    sql = "SELECT JSON_OBJECT('customers',(SELECT COUNT(*) FROM logitrack.customers),'shipments',(SELECT COUNT(*) FROM logitrack.shipments),'couriers',(SELECT COUNT(*) FROM courier_db.couriers),'users',(SELECT COUNT(*) FROM security_db.users));"
+    sql = "SELECT JSON_OBJECT('customers',(SELECT COUNT(*) FROM shipment_db.customers),'shipments',(SELECT COUNT(*) FROM shipment_db.shipments),'couriers',(SELECT COUNT(*) FROM courier_db.couriers),'users',(SELECT COUNT(*) FROM security_db.users));"
     counts = subprocess.check_output(['docker','exec','logitrack-mysql','sh','-c',
         'export MYSQL_PWD="$MYSQL_ROOT_PASSWORD"; exec mysql -uroot -N -B -e "$1"', 'counts', sql], text=True)
     (root / 'counts-before.json').write_text(json.dumps(json.loads(counts), indent=2), encoding='utf-8')
     process = subprocess.Popen(['docker', 'exec', 'logitrack-mysql', 'sh', '-c',
-        'export MYSQL_PWD="$MYSQL_ROOT_PASSWORD"; exec mysqldump -uroot --single-transaction --routines --triggers --events --set-gtid-purged=OFF --no-tablespaces --databases security_db courier_db logitrack shipment_db'],
+        'export MYSQL_PWD="$MYSQL_ROOT_PASSWORD"; exec mysqldump -uroot --single-transaction --routines --triggers --events --set-gtid-purged=OFF --no-tablespaces --databases security_db courier_db shipment_db payment_db'],
         stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     with gzip.open(root / 'mysql.sql.gz', 'wb') as output:
         shutil.copyfileobj(process.stdout, output)

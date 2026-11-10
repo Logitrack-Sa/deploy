@@ -32,7 +32,7 @@ def prepare(directory, public_url):
     env.pop("JWT_CERTS_DIRECTORY", None)
     config = json.loads(run("docker", "compose", "--env-file", str(DEPLOY / "target/local/runtime.env"),
                             "-f", str(DEPLOY / "docker-compose.yml"), "-f", str(DEPLOY / "docker-compose.local.yml"),
-                            "-p", "logitrack-local-local", "config", "--format", "json"))
+                            "-p", "logitrack-local", "config", "--format", "json"))
     project = {"name": "logitrack-notebook", "services": {}, "volumes": {},
                "networks": {"app": {}, "proxy": {"external": True, "name": "proxy"}}}
     date = datetime.now().strftime("%Y%m%d")
@@ -57,7 +57,7 @@ def prepare(directory, public_url):
         service = dict(source)
         if 'deploy' in service:
             service['deploy'].pop('placement', None)
-        image = "logitrack-frontend:notebook" if name == "frontend" else service.get("image", f"logitrack-local-local-{name}:latest")
+        image = service.get("image", f"logitrack-local-{name}:latest")
         image_id = run("docker", "image", "inspect", image, "--format", "{{.Id}}")
         tag = f"logitrack-notebook-{name}:{date}"
         subprocess.run(["docker", "tag", image_id, tag], check=True)

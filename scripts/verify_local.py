@@ -46,9 +46,8 @@ def verify(directory, base_url=None):
     deadline = time.monotonic() + 300
     while True:
         try:
-            health = call("GET", "/actuator/health", host=private_base)
-            if health.get("status") == "UP":
-                break
+            call("GET", "/api/v1/auth/public-key", host=private_base)
+            break
         except (AssertionError, URLError, TimeoutError, ValueError, HTTPException, ConnectionError):
             pass
         if time.monotonic() > deadline:
@@ -64,10 +63,10 @@ def verify(directory, base_url=None):
     call("GET", "/api/v1/customers?page=0&size=10", token=admin)
     call("GET", "/api/v1/customers/" + customer["id"], token=admin)
     courier = call("POST", "/api/v1/couriers", {"name": "Repartidor " + run, "dni": str(secrets.randbelow(90000000) + 10000000), "vehicleType": "MOTO"}, admin, 201)
-    call("GET", "/api/v1/couriers?status=ACTIVO&page=0&size=10", token=admin)
+    call("GET", "/api/v1/couriers?status=AVAILABLE&page=0&size=10", token=admin)
     call("GET", "/api/v1/couriers/" + courier["id"], token=admin)
-    call("PATCH", "/api/v1/couriers/" + courier["id"] + "/status", {"status": "INACTIVO"}, admin)
-    call("PATCH", "/api/v1/couriers/" + courier["id"] + "/status", {"status": "ACTIVO"}, admin)
+    for courier_status in ("INACTIVE", "BUSY", "AVAILABLE"):
+        assert call("PATCH", "/api/v1/couriers/" + courier["id"] + "/status", {"status": courier_status}, admin)["status"] == courier_status
     address = {"street": "Bolivia", "number": "1239", "city": "Jujuy", "postalCode": "4600"}
     shipment_body = {"customerId": customer["id"], "origin": address, "destination": address, "weightKg": 2.5, "widthCm": 30, "heightCm": 20, "lengthCm": 40}
     shipment = call("POST", "/api/v1/shipments", shipment_body, admin, 201)
@@ -106,10 +105,16 @@ def verify(directory, base_url=None):
     assert token, "No se capturó el correo de verificación local"
     call("POST", "/api/v1/auth/verify-email?" + urlencode({"token": token}))
     call("POST", "/api/v1/auth/verify-email?" + urlencode({"token": token}), expected=404)
-    call("PUT", f"/api/v1/users/{registered['id']}/customer-link", {"customerId": customer["id"]}, admin)
     client = call("POST", "/api/v1/auth/login", {"email": email, "password": password})["accessToken"]
-    call("GET", route, token=client)
-    call("POST", "/api/v1/shipments", shipment_body, client, 201)
+    client_profile = call("GET", "/api/v1/auth/me", token=client)
+    assert client_profile["customerId"], "El registro verificado debe vincular su propio cliente automáticamente"
+    call("GET", route, token=client, expected=403)
+    own_body = dict(shipment_body, customerId=client_profile["customerId"])
+    own_shipment = call("POST", "/api/v1/shipments", own_body, client, 201)
+    own_route = "/api/v1/shipments/" + own_shipment["id"]
+    call("GET", own_route, token=client)
+    assert call("POST", own_route + "/cancellation", token=client)["status"] == "CANCELADO"
+    call("POST", own_route + "/cancellation", token=client, expected=422)
     call("GET", "/api/v1/customers", token=client, expected=403)
     call("GET", "/api/v1/users", token=client, expected=403)
     call("POST", cancel_route, token=client, expected=403)
