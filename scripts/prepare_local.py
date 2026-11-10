@@ -44,7 +44,8 @@ def prepare(directory):
     for name in ("DB_ROOT_PASSWORD", "SECURITY_DB_PASSWORD", "COURIER_DB_PASSWORD", "SHIPMENT_DB_PASSWORD",
                  "PAYMENT_DB_PASSWORD", "SECURITY_ADMIN_PASSWORD", "RABBITMQ_DEFAULT_PASS", "GRAFANA_ADMIN_PASSWORD"):
         values[name] = secrets.token_hex(24)
-    values["JWT_CERTS_DIRECTORY"] = os.path.relpath(certs, DEPLOY).replace(os.sep, "/")
+    relative_certs = os.path.relpath(certs, DEPLOY).replace(os.sep, "/")
+    values["JWT_CERTS_DIRECTORY"] = "./" + relative_certs
     values["JWT_KEY_ID"] = "logitrack-local-" + secrets.token_hex(6)
     with env.open("x", encoding="utf-8") as output:
         output.write("\n".join(f"{key}={value}" for key, value in values.items()) + "\n")
