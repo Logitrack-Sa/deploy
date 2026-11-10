@@ -5,6 +5,13 @@ x-discovery-env: &discovery-env
   EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
   SERVER_ADDRESS: "0.0.0.0"
 
+x-java-healthcheck: &java-healthcheck
+  test: ["CMD", "bash", "-ec", "exec 3<>/dev/tcp/127.0.0.1/$$MANAGEMENT_SERVER_PORT; printf 'GET /actuator/health HTTP/1.0\\r\\nHost: localhost\\r\\n\\r\\n' >&3; read -r status <&3; [[ $$status == *' 200 '* ]]"]
+  interval: 10s
+  timeout: 5s
+  start_period: 90s
+  retries: 30
+
 services:
   # ==========================================
   # Motor Relacional: MySQL 8.4
@@ -153,6 +160,7 @@ services:
   # ==========================================
   security-service:
     container_name: logitrack-security-service
+    healthcheck: *java-healthcheck
     build:
       context: ../security-service
       dockerfile: Dockerfile
@@ -214,6 +222,7 @@ services:
   # ==========================================
   courier-service:
     container_name: logitrack-courier-service
+    healthcheck: *java-healthcheck
     build:
       context: ../courier-service
       dockerfile: Dockerfile
@@ -270,6 +279,7 @@ services:
   # ==========================================
   shipment-service:
     container_name: logitrack-shipment-service
+    healthcheck: *java-healthcheck
     build:
       context: ../shipment-service
       dockerfile: Dockerfile
@@ -330,6 +340,7 @@ services:
   # ==========================================
   chatbot-service:
     container_name: logitrack-chatbot-service
+    healthcheck: *java-healthcheck
     build:
       context: ../chatbot-service
       dockerfile: Dockerfile
@@ -372,6 +383,7 @@ services:
   # ==========================================
   api-gateway:
     container_name: logitrack-api-gateway
+    healthcheck: *java-healthcheck
     build:
       context: ../api-gateway
       dockerfile: Dockerfile
@@ -473,7 +485,7 @@ services:
           memory: 256M
     depends_on:
       api-gateway:
-        condition: service_started
+        condition: service_healthy
     networks:
       - logitrack-net
 
