@@ -250,7 +250,7 @@ services:
         limits:
           memory: 384M
     volumes:
-      - ${JWT_CERTS_DIRECTORY:-../certs}:/secrets:ro
+      - ${JWT_CERTS_DIRECTORY:-../certs}/public.pem:/secrets/public.pem:ro
     depends_on:
       mysql:
         condition: service_healthy
@@ -321,7 +321,7 @@ services:
       eureka-server:
         condition: service_healthy
     volumes:
-      - ${JWT_CERTS_DIRECTORY:-../certs}:/secrets:ro
+      - ${JWT_CERTS_DIRECTORY:-../certs}/public.pem:/secrets/public.pem:ro
     networks:
       - logitrack-net
 
@@ -399,7 +399,7 @@ services:
         limits:
           memory: 384M
     volumes:
-      - ${JWT_CERTS_DIRECTORY:-../certs}:/secrets:ro
+      - ${JWT_CERTS_DIRECTORY:-../certs}/public.pem:/secrets/public.pem:ro
     depends_on:
       config-server:
         condition: service_healthy
@@ -504,7 +504,7 @@ services:
       SHIPMENT_SERVICE_URL: http://shipment-service:8081
       JAVA_OPTS: -XX:+UseSerialGC -Xms64m -Xmx192m -XX:MaxMetaspaceSize=96m
     volumes:
-      - ${JWT_CERTS_DIRECTORY:-../certs}:/secrets:ro
+      - ${JWT_CERTS_DIRECTORY:-../certs}/public.pem:/secrets/public.pem:ro
     deploy:
       resources:
         limits:
