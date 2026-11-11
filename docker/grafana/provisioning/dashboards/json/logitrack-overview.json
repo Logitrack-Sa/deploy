@@ -1,15 +1,6 @@
 {
   "annotations": {
-    "list": [
-      {
-        "builtIn": 1,
-        "datasource": "-- Grafana --",
-        "enable": true,
-        "hide": true,
-        "name": "Annotations & Alerts",
-        "type": "dashboard"
-      }
-    ]
+    "list": []
   },
   "editable": true,
   "fiscalYearStartMonth": 0,
@@ -27,208 +18,334 @@
         "y": 0
       },
       "id": 1,
-      "title": "Rendimiento HTTP y Disponibilidad",
+      "title": "Resumen Ejecutivo de la Plataforma LogiTrack",
       "type": "row"
     },
     {
+      "id": 2,
+      "title": "Microservicios Activos",
+      "type": "stat",
       "datasource": "Prometheus-LogiTrack",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 15,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "smooth",
-            "lineWidth": 2,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "orange",
-                "value": 0.5
-              },
-              {
-                "color": "red",
-                "value": 1
-              }
-            ]
-          },
-          "unit": "s"
-        },
-        "overrides": []
-      },
       "gridPos": {
-        "h": 8,
-        "w": 12,
+        "h": 4,
+        "w": 4,
         "x": 0,
         "y": 1
       },
-      "id": 2,
-      "options": {
-        "legend": {
-          "calcs": [
-            "mean",
-            "max"
-          ],
-          "displayMode": "table",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "single",
-          "sort": "none"
-        }
-      },
-      "targets": [
-        {
-          "datasource": "Prometheus-LogiTrack",
-          "editorMode": "code",
-          "expr": "histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket[5m])) by (le, uri, application, instance))",
-          "legendFormat": "{{application}} - {{uri}} - {{instance}}",
-          "range": true,
-          "refId": "A"
-        }
-      ],
-      "title": "Latencia HTTP (P95)",
-      "type": "timeseries"
-    },
-    {
-      "datasource": "Prometheus-LogiTrack",
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "palette-classic"
+            "mode": "thresholds"
           },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 20,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "smooth",
-            "lineWidth": 2,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "line"
-            }
-          },
-          "mappings": [],
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
+                "color": "red",
                 "value": null
               },
               {
                 "color": "yellow",
-                "value": 1
+                "value": 4
               },
               {
-                "color": "red",
+                "color": "green",
                 "value": 5
               }
             ]
           },
-          "unit": "percent"
+          "mappings": []
         },
         "overrides": []
       },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 1
-      },
-      "id": 3,
       "options": {
-        "legend": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
           "calcs": [
-            "mean",
-            "max"
+            "lastNotNull"
           ],
-          "displayMode": "table",
-          "placement": "bottom",
-          "showLegend": true
+          "fields": "",
+          "values": false
         },
-        "tooltip": {
-          "mode": "single",
-          "sort": "none"
-        }
+        "textMode": "auto"
       },
       "targets": [
         {
           "datasource": "Prometheus-LogiTrack",
-          "editorMode": "code",
-          "expr": "((sum(rate(http_server_requests_seconds_count{status=~\"5..\"}[5m])) by (application, instance) or (0 * (sum(rate(http_server_requests_seconds_count[5m])) by (application, instance) > 0))) / (sum(rate(http_server_requests_seconds_count[5m])) by (application, instance) > 0)) * 100",
-          "legendFormat": "{{application}} - {{instance}} (0% = sin errores, sin serie = sin tráfico)",
-          "range": true,
+          "expr": "sum(up{job=~\"api-gateway|courier-service|payment-service|security-service|shipment-service\"})",
+          "legendFormat": "Servicios UP",
           "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Peticiones HTTP Procesadas",
+      "type": "stat",
+      "datasource": "Prometheus-LogiTrack",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 4,
+        "y": 1
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          },
+          "mappings": []
         },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "targets": [
         {
           "datasource": "Prometheus-LogiTrack",
-          "editorMode": "code",
-          "expr": "up{job=~\"api-gateway|security-service|shipment-service|courier-service|chatbot-service\"} == 0",
-          "legendFormat": "TARGET DOWN - {{job}} - {{instance}}",
-          "range": true,
-          "refId": "B"
+          "expr": "sum(http_server_requests_seconds_count)",
+          "legendFormat": "Peticiones",
+          "refId": "A"
         }
-      ],
-      "title": "Tasa de Errores 5xx",
-      "type": "timeseries"
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Hilos JVM Activos",
+      "type": "stat",
+      "datasource": "Prometheus-LogiTrack",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 8,
+        "y": 1
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "purple",
+                "value": null
+              }
+            ]
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": "Prometheus-LogiTrack",
+          "expr": "sum(jvm_threads_live_threads{job=~\"api-gateway|courier-service|payment-service|security-service|shipment-service\"})",
+          "legendFormat": "Hilos",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "Pool DB - Disponibles",
+      "type": "stat",
+      "datasource": "Prometheus-LogiTrack",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 12,
+        "y": 1
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "orange",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 20
+              }
+            ]
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": "Prometheus-LogiTrack",
+          "expr": "sum(hikaricp_connections_idle)",
+          "legendFormat": "Conexiones Idle",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "Heap JVM Usado (Total)",
+      "type": "stat",
+      "datasource": "Prometheus-LogiTrack",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 16,
+        "y": 1
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "mbytes",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "teal",
+                "value": null
+              }
+            ]
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": "Prometheus-LogiTrack",
+          "expr": "sum(jvm_memory_used_bytes{area=\"heap\",job=~\"api-gateway|courier-service|payment-service|security-service|shipment-service\"}) / 1024 / 1024",
+          "legendFormat": "Heap MB",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "title": "Uptime Promedio",
+      "type": "stat",
+      "datasource": "Prometheus-LogiTrack",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 20,
+        "y": 1
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": "Prometheus-LogiTrack",
+          "expr": "avg(process_uptime_seconds{job=~\"api-gateway|courier-service|payment-service|security-service|shipment-service\"})",
+          "legendFormat": "Uptime",
+          "refId": "A"
+        }
+      ]
     },
     {
       "collapsed": false,
@@ -236,148 +353,358 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 9
+        "y": 5
       },
-      "id": 4,
-      "title": "Recursos JVM, Base de Datos y Caché",
+      "id": 8,
+      "title": "Salud y Estado Operativo de Microservicios",
       "type": "row"
     },
     {
+      "id": 9,
+      "title": "Disponibilidad por Microservicio (Healthcheck)",
+      "type": "stat",
       "datasource": "Prometheus-LogiTrack",
+      "gridPos": {
+        "h": 5,
+        "w": 14,
+        "x": 0,
+        "y": 6
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          },
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "DOWN",
+                  "color": "red"
+                },
+                "1": {
+                  "text": "ONLINE",
+                  "color": "green"
+                }
+              }
+            }
+          ]
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "value_and_name"
+      },
+      "targets": [
+        {
+          "datasource": "Prometheus-LogiTrack",
+          "expr": "up{job=~\"api-gateway|courier-service|payment-service|security-service|shipment-service\"}",
+          "legendFormat": "{{job}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "title": "Hilos JVM Activos por Microservicio",
+      "type": "bargauge",
+      "datasource": "Prometheus-LogiTrack",
+      "gridPos": {
+        "h": 5,
+        "w": 10,
+        "x": 14,
+        "y": 6
+      },
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "palette-classic"
           },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 15,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "smooth",
-            "lineWidth": 2,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "line"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "yellow",
-                "value": 75
-              },
-              {
-                "color": "red",
-                "value": 90
-              }
-            ]
-          },
-          "unit": "percent"
+          "min": 0,
+          "max": 80,
+          "mappings": []
         },
         "overrides": []
       },
+      "options": {
+        "displayMode": "gradient",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showUnfilled": true
+      },
+      "targets": [
+        {
+          "datasource": "Prometheus-LogiTrack",
+          "expr": "jvm_threads_live_threads{job=~\"api-gateway|courier-service|payment-service|security-service|shipment-service\"}",
+          "legendFormat": "{{job}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 11
+      },
+      "id": 11,
+      "title": "Tr\u00e1fico HTTP, Rendimiento y Tasas de Respuesta",
+      "type": "row"
+    },
+    {
+      "id": 12,
+      "title": "Tasa de Peticiones HTTP (Req/s)",
+      "type": "timeseries",
+      "datasource": "Prometheus-LogiTrack",
       "gridPos": {
         "h": 8,
         "w": 8,
         "x": 0,
-        "y": 10
+        "y": 12
       },
-      "id": 5,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "unit": "reqps",
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "fillOpacity": 15
+          }
+        },
+        "overrides": []
+      },
       "options": {
         "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
           "calcs": [
             "mean",
             "max"
-          ],
-          "displayMode": "table",
-          "placement": "bottom",
-          "showLegend": true
+          ]
         },
         "tooltip": {
-          "mode": "single",
-          "sort": "none"
+          "mode": "multi"
         }
       },
       "targets": [
         {
           "datasource": "Prometheus-LogiTrack",
-          "editorMode": "code",
-          "expr": "sum(jvm_memory_used_bytes{area=\"heap\"} and on(application, instance, id) (jvm_memory_max_bytes{area=\"heap\"} > 0)) by (application, instance) / sum((jvm_memory_max_bytes{area=\"heap\"} > 0) and on(application, instance, id) jvm_memory_used_bytes{area=\"heap\"}) by (application, instance) * 100",
-          "legendFormat": "{{application}} - {{instance}} Heap (%)",
-          "range": true,
+          "expr": "sum by (job) (rate(http_server_requests_seconds_count[1m]))",
+          "legendFormat": "{{job}}",
           "refId": "A"
         }
-      ],
-      "title": "Consumo de Heap JVM",
-      "type": "timeseries"
+      ]
     },
     {
+      "id": 13,
+      "title": "Peticiones Totales por Estado HTTP",
+      "type": "timeseries",
       "datasource": "Prometheus-LogiTrack",
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 8,
+        "y": 12
+      },
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "palette-classic"
           },
+          "unit": "short",
           "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
             "drawStyle": "line",
-            "fillOpacity": 15,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
             "lineInterpolation": "smooth",
             "lineWidth": 2,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
+            "fillOpacity": 20
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "datasource": "Prometheus-LogiTrack",
+          "expr": "sum by (status) (http_server_requests_seconds_count)",
+          "legendFormat": "HTTP {{status}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 14,
+      "title": "Latencia M\u00e1xima Registrada por Microservicio",
+      "type": "timeseries",
+      "datasource": "Prometheus-LogiTrack",
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 12
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
           },
-          "mappings": [],
+          "unit": "s",
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "fillOpacity": 10
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "datasource": "Prometheus-LogiTrack",
+          "expr": "max by (job) (http_server_requests_seconds_max)",
+          "legendFormat": "{{job}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 20
+      },
+      "id": 15,
+      "title": "Consumo de Memoria JVM, Heap y Metaspace",
+      "type": "row"
+    },
+    {
+      "id": 16,
+      "title": "Memoria Heap Utilizada por Microservicio",
+      "type": "timeseries",
+      "datasource": "Prometheus-LogiTrack",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 21
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "unit": "mbytes",
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "fillOpacity": 15
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "lastNotNull",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "datasource": "Prometheus-LogiTrack",
+          "expr": "sum by (job) (jvm_memory_used_bytes{area=\"heap\",job=~\"api-gateway|courier-service|payment-service|security-service|shipment-service\"}) / 1024 / 1024",
+          "legendFormat": "{{job}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 17,
+      "title": "Porcentaje de Heap Usado vs L\u00edmite M\u00e1ximo",
+      "type": "gauge",
+      "datasource": "Prometheus-LogiTrack",
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 12,
+        "y": 21
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "color": {
+            "mode": "thresholds"
+          },
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -387,171 +714,499 @@
               },
               {
                 "color": "orange",
-                "value": 8
+                "value": 75
               },
               {
                 "color": "red",
-                "value": 10
+                "value": 90
               }
             ]
-          },
-          "unit": "short"
+          }
         },
         "overrides": []
       },
+      "options": {
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
+      },
+      "targets": [
+        {
+          "datasource": "Prometheus-LogiTrack",
+          "expr": "(sum by (job) (jvm_memory_used_bytes{area=\"heap\",job=~\"api-gateway|courier-service|payment-service|security-service|shipment-service\"}) / sum by (job) (jvm_memory_max_bytes{area=\"heap\",job=~\"api-gateway|courier-service|payment-service|security-service|shipment-service\"})) * 100",
+          "legendFormat": "{{job}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 18,
+      "title": "Memoria Metaspace / No-Heap",
+      "type": "timeseries",
+      "datasource": "Prometheus-LogiTrack",
       "gridPos": {
         "h": 8,
-        "w": 8,
-        "x": 8,
-        "y": 10
+        "w": 6,
+        "x": 18,
+        "y": 21
       },
-      "id": 6,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "unit": "mbytes",
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "fillOpacity": 15
+          }
+        },
+        "overrides": []
+      },
       "options": {
         "legend": {
-          "calcs": [
-            "mean",
-            "max"
-          ],
           "displayMode": "table",
           "placement": "bottom",
-          "showLegend": true
+          "calcs": [
+            "lastNotNull"
+          ]
         },
         "tooltip": {
-          "mode": "single",
-          "sort": "none"
+          "mode": "multi"
         }
       },
       "targets": [
         {
           "datasource": "Prometheus-LogiTrack",
-          "editorMode": "code",
+          "expr": "sum by (job) (jvm_memory_used_bytes{area=\"nonheap\",job=~\"api-gateway|courier-service|payment-service|security-service|shipment-service\"}) / 1024 / 1024",
+          "legendFormat": "{{job}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 29
+      },
+      "id": 19,
+      "title": "Carga de CPU, Memoria RSS y Descriptores de Archivos",
+      "type": "row"
+    },
+    {
+      "id": 20,
+      "title": "Uso de CPU por Microservicio (%)",
+      "type": "timeseries",
+      "datasource": "Prometheus-LogiTrack",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 30
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "unit": "percent",
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "fillOpacity": 15
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "mean",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "datasource": "Prometheus-LogiTrack",
+          "expr": "process_cpu_usage{job=~\"api-gateway|courier-service|payment-service|security-service|shipment-service\"} * 100",
+          "legendFormat": "{{job}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 21,
+      "title": "Memoria Residente de Proceso (RSS en MB)",
+      "type": "timeseries",
+      "datasource": "Prometheus-LogiTrack",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 30
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "unit": "mbytes",
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "fillOpacity": 15
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "lastNotNull",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "datasource": "Prometheus-LogiTrack",
+          "expr": "process_resident_memory_bytes{job=~\"api-gateway|courier-service|payment-service|security-service|shipment-service\"} / 1024 / 1024",
+          "legendFormat": "{{job}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 38
+      },
+      "id": 22,
+      "title": "Telemetr\u00eda de Base de Datos - HikariCP Connection Pools",
+      "type": "row"
+    },
+    {
+      "id": 23,
+      "title": "Conexiones Activas a MySQL",
+      "type": "timeseries",
+      "datasource": "Prometheus-LogiTrack",
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 0,
+        "y": 39
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "unit": "short",
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "stepAfter",
+            "lineWidth": 2,
+            "fillOpacity": 15
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "lastNotNull",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "datasource": "Prometheus-LogiTrack",
           "expr": "hikaricp_connections_active",
-          "legendFormat": "{{application}} - {{pool}} - {{instance}} - Activas",
-          "range": true,
+          "legendFormat": "{{job}} (act)",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 24,
+      "title": "Conexiones Disponibles (Pool Idle)",
+      "type": "timeseries",
+      "datasource": "Prometheus-LogiTrack",
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 8,
+        "y": 39
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "unit": "short",
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "fillOpacity": 15
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "datasource": "Prometheus-LogiTrack",
+          "expr": "hikaricp_connections_idle",
+          "legendFormat": "{{job}} (idle)",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 25,
+      "title": "Peticiones en Cola por Conexi\u00f3n (Pending)",
+      "type": "timeseries",
+      "datasource": "Prometheus-LogiTrack",
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 16,
+        "y": 39
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          },
+          "unit": "short",
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "stepAfter",
+            "lineWidth": 2,
+            "fillOpacity": 15
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "datasource": "Prometheus-LogiTrack",
+          "expr": "hikaricp_connections_pending",
+          "legendFormat": "{{job}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 46
+      },
+      "id": 26,
+      "title": "Infraestructura del Host - Red, Disco y Carga",
+      "type": "row"
+    },
+    {
+      "id": 27,
+      "title": "Tr\u00e1fico de Red del Servidor (KB/s)",
+      "type": "timeseries",
+      "datasource": "Prometheus-LogiTrack",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 47
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "unit": "kbytes",
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "fillOpacity": 15
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "mean",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "datasource": "Prometheus-LogiTrack",
+          "expr": "sum(rate(node_network_receive_bytes_total{job=\"notebook\",device!~\"lo|docker.*|veth.*|br-.*\"}[1m])) / 1024",
+          "legendFormat": "Entrada / Recibido",
           "refId": "A"
         },
         {
           "datasource": "Prometheus-LogiTrack",
-          "editorMode": "code",
-          "expr": "hikaricp_connections_max",
-          "legendFormat": "{{application}} - {{pool}} - {{instance}} - Max",
-          "range": true,
+          "expr": "sum(rate(node_network_transmit_bytes_total{job=\"notebook\",device!~\"lo|docker.*|veth.*|br-.*\"}[1m])) / 1024",
+          "legendFormat": "Salida / Transmitido",
           "refId": "B"
         }
-      ],
-      "title": "Pool HikariCP",
-      "type": "timeseries"
+      ]
     },
     {
+      "id": 28,
+      "title": "Carga Promedio del Sistema (1m, 5m, 15m)",
+      "type": "timeseries",
       "datasource": "Prometheus-LogiTrack",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 47
+      },
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "palette-classic"
           },
           "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
             "drawStyle": "line",
-            "fillOpacity": 20,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
             "lineInterpolation": "smooth",
             "lineWidth": 2,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "line"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "red",
-                "value": null
-              },
-              {
-                "color": "yellow",
-                "value": 50
-              },
-              {
-                "color": "green",
-                "value": 80
-              }
-            ]
-          },
-          "unit": "percent"
+            "fillOpacity": 10
+          }
         },
         "overrides": []
       },
-      "gridPos": {
-        "h": 8,
-        "w": 8,
-        "x": 16,
-        "y": 10
-      },
-      "id": 7,
       "options": {
         "legend": {
-          "calcs": [
-            "mean",
-            "max"
-          ],
           "displayMode": "table",
           "placement": "bottom",
-          "showLegend": true
+          "calcs": [
+            "lastNotNull",
+            "mean"
+          ]
         },
         "tooltip": {
-          "mode": "single",
-          "sort": "none"
+          "mode": "multi"
         }
       },
       "targets": [
         {
           "datasource": "Prometheus-LogiTrack",
-          "editorMode": "code",
-          "expr": "((sum(rate(cache_gets_total{result=\"hit\", application=\"security-service\"}[5m])) by (application, instance) or (0 * (sum(rate(cache_gets_total{application=\"security-service\"}[5m])) by (application, instance) > 0))) / (sum(rate(cache_gets_total{application=\"security-service\"}[5m])) by (application, instance) > 0)) * 100",
-          "legendFormat": "security-service - {{instance}} Cache Hit Ratio (%)",
-          "range": true,
+          "expr": "node_load1{job=\"notebook\"}",
+          "legendFormat": "Carga 1 min",
           "refId": "A"
+        },
+        {
+          "datasource": "Prometheus-LogiTrack",
+          "expr": "node_load5{job=\"notebook\"}",
+          "legendFormat": "Carga 5 min",
+          "refId": "B"
+        },
+        {
+          "datasource": "Prometheus-LogiTrack",
+          "expr": "node_load15{job=\"notebook\"}",
+          "legendFormat": "Carga 15 min",
+          "refId": "C"
         }
-      ],
-      "title": "Eficiencia de Caché Redis",
-      "type": "timeseries"
+      ]
     }
   ],
   "refresh": "10s",
-  "schemaVersion": 39,
+  "schemaVersion": 38,
   "tags": [
     "logitrack",
-    "sprint4",
     "microservices",
-    "observability"
+    "production",
+    "monitoring"
   ],
   "templating": {
     "list": []
   },
   "time": {
-    "from": "now-15m",
+    "from": "now-1h",
     "to": "now"
   },
   "timepicker": {},

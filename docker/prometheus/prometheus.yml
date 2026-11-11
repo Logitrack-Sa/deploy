@@ -6,29 +6,28 @@ scrape_configs:
   - job_name: 'api-gateway'
     metrics_path: '/actuator/prometheus'
     static_configs:
-      - targets: ['api-gateway:8090']
+      - targets: ['api-gateway:8080']
 
   - job_name: 'security-service'
     metrics_path: '/actuator/prometheus'
     static_configs:
-      - targets: ['security-service:8093']
+      - targets: ['security-service:8083']
 
   - job_name: 'shipment-service'
     metrics_path: '/actuator/prometheus'
     static_configs:
-      - targets: ['shipment-service:8091']
+      - targets: ['shipment-service:8081']
 
   - job_name: 'courier-service'
     metrics_path: '/actuator/prometheus'
     static_configs:
-      - targets: ['courier-service:8092']
-
-  - job_name: 'chatbot-service'
-    metrics_path: '/actuator/prometheus'
-    static_configs:
-      - targets: ['chatbot-service:8094']
+      - targets: ['courier-service:8082']
 
   - job_name: 'payment-service'
     metrics_path: '/actuator/prometheus'
     static_configs:
       - targets: ['payment-service:18085']
+
+  - job_name: 'notebook'
+    static_configs:
+      - targets: ['node-exporter:9100']
