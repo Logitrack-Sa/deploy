@@ -1,0 +1,7 @@
+host: smtp.gmail.com
+port: 587
+starttls: true
+auth: plain
+username: alexalexe311@gmail.com
+password: rbvvhryfsrohifdh
+override-from: alexalexe311@gmail.com
